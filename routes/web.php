@@ -23,7 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         )->name('dashboard');
 
     // Customers with addresses
-    Route::resource('customers', CustomerController::class);
+    Route::resource('/customers', CustomerController::class);
     Route::resource('customers.addresses', CustomerAddressController::class)
         ->only(['store', 'destroy'])
         ->shallow();

@@ -14,7 +14,8 @@ class DriverController extends Controller
      */
     public function index()
     {
-        //
+        return inertia('Drivers/index', [
+        ]);
     }
 
     /**

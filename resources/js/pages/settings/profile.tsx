@@ -1,4 +1,4 @@
-import { type BreadcrumbItem, type SharedData } from '@/types';
+import { type BreadcrumbItem, type SharedData } from '@/types/index';
 import { Transition } from '@headlessui/react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
@@ -16,6 +16,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Profile settings',
         href: '/settings/profile',
+        label: undefined
     },
 ];
 

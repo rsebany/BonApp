@@ -18,4 +18,9 @@ class Customer extends Model
             ->using(CustomerAddress::class)
             ->withPivot('id');
     }
+
+    public function getNameAttribute(): string
+    {
+        return $this->first_name.' '.$this->last_name;
+    }
 }

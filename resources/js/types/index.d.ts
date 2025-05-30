@@ -8,6 +8,7 @@ export interface Auth {
 export interface BreadcrumbItem {
     label: ReactNode;
     title: string;
+    current?: boolean;
     href: string;
 }
 

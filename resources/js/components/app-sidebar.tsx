@@ -1,6 +1,5 @@
 import { NavMain } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types/index';
 import { Link } from '@inertiajs/react';
 import { 
@@ -9,16 +8,9 @@ import {
   ShoppingCart,
   Users,
   Truck,
-  ClipboardList,
   Settings,
   PieChart,
-  DollarSign,
-  MessageSquare,
-  Shield,
-  FileText,
-  MapPin,
-  Tag,
-  HelpCircle
+  LogOut
 } from 'lucide-react';
 import AppLogo from './app-logo';
 
@@ -26,200 +18,96 @@ const mainNavItems: NavItem[] = [
   // Core Modules
   {
     title: 'Dashboard',
-    href: '/dashboard',
+    href: route('dashboard'),
     icon: LayoutGrid,
-    exact: true
+    exact: true,
+    isActive: route().current('dashboard')
   },
   {
     title: 'Restaurants',
-    href: '/restaurants',
+    href: route('restaurants.index'),
     icon: Utensils,
+    isActive: route().current('restaurants.*'),
     children: [
       {
         title: 'All Restaurants',
-        href: '/restaurants'
+        href: route('restaurants.index'),
+        isActive: route().current('restaurants.index')
       },
       {
         title: 'Add New',
-        href: '/restaurants/create'
-      },
-      {
-        title: 'Categories',
-        href: '/restaurants/categories'
+        href: route('restaurants.create'),
+        isActive: route().current('restaurants.create')
       }
     ]
   },
   {
     title: 'Orders',
-    href: '/orders',
+    href: route('orders.index'),
     icon: ShoppingCart,
-    badge: '5', // Example dynamic count
+    badge: '5',
+    isActive: route().current('orders.*'),
     children: [
       {
         title: 'All Orders',
-        href: '/orders'
-      },
-      {
-        title: 'Pending',
-        href: '/orders?status=pending'
-      },
-      {
-        title: 'Completed',
-        href: '/orders?status=completed'
+        href: route('orders.index'),
+        isActive: route().current('orders.index')
       }
     ]
   },
   {
     title: 'Customers',
-    href: '/customers',
-    icon: Users
+    href: route('customers.index'),
+    icon: Users,
+    isActive: route().current('customers.*'),
+    exact:false
   },
   {
     title: 'Drivers',
-    href: '/drivers',
+    href: '#',
     icon: Truck,
+    isActive: false,
     children: [
       {
         title: 'All Drivers',
-        href: '/drivers'
-      },
-      {
-        title: 'Driver Applications',
-        href: '/drivers/applications'
-      },
-      {
-        title: 'Availability',
-        href: '/drivers/availability'
+        href: '#',
+        isActive: false
       }
     ]
   },
-
-  // Menu Management
+  
+  // Business Tools (grouped)
   {
-    title: 'Menu Manager',
-    href: '/menu',
-    icon: ClipboardList,
+    title: 'Business Tools',
+    href: '#',
+    icon: PieChart,
+    isActive: false,
     children: [
       {
-        title: 'All Items',
-        href: '/menu'
+        title: 'Analytics',
+        href: '#',
+        isActive: false
       },
       {
-        title: 'Categories',
-        href: '/menu/categories'
+        title: 'Payments',
+        href: '#',
+        isActive: false,
+        children: [
+          {
+            title: 'Transactions',
+            href: '#',
+            isActive: false
+          }
+        ]
       },
       {
-        title: 'Special Offers',
-        href: '/menu/offers'
-      }
-    ]
-  },
-
-  // Business Tools
-  {
-    title: 'Analytics',
-    href: '/analytics',
-    icon: PieChart
-  },
-  {
-    title: 'Payments',
-    href: '/payments',
-    icon: DollarSign,
-    children: [
-      {
-        title: 'Transactions',
-        href: '/payments'
-      },
-      {
-        title: 'Payouts',
-        href: '/payments/payouts'
-      },
-      {
-        title: 'Refunds',
-        href: '/payments/refunds'
-      }
-    ]
-  },
-  {
-    title: 'Promotions',
-    href: '/promotions',
-    icon: Tag
-  },
-
-  // Support
-  {
-    title: 'Support',
-    href: '/support',
-    icon: HelpCircle,
-    children: [
-      {
-        title: 'Tickets',
-        href: '/support'
-      },
-      {
-        title: 'FAQs',
-        href: '/support/faqs'
-      }
-    ]
-  },
-  {
-    title: 'Feedback',
-    href: '/feedback',
-    icon: MessageSquare
-  },
-
-  // Administration
-  {
-    title: 'Locations',
-    href: '/locations',
-    icon: MapPin
-  },
-  {
-    title: 'Reports',
-    href: '/reports',
-    icon: FileText
-  },
-  {
-    title: 'Administration',
-    href: '/admin',
-    icon: Shield,
-    permission: 'admin', // Example permission guard
-    children: [
-      {
-        title: 'Users',
-        href: '/admin/users'
-      },
-      {
-        title: 'Roles',
-        href: '/admin/roles'
-      },
-      {
-        title: 'System Logs',
-        href: '/admin/logs'
-      }
-    ]
-  },
-  {
-    title: 'Settings',
-    href: '/settings',
-    icon: Settings,
-    children: [
-      {
-        title: 'General',
-        href: '/settings/general'
-      },
-      {
-        title: 'Notifications',
-        href: '/settings/notifications'
-      },
-      {
-        title: 'Integrations',
-        href: '/settings/integrations'
+        title: 'Promotions',
+        href: '#',
+        isActive: false
       }
     ]
   }
 ];
-
 
 export function AppSidebar() {
     return (
@@ -228,7 +116,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href="/dashboard" prefetch>
+                            <Link href={route('dashboard')} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
@@ -241,7 +129,35 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <NavUser />
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton 
+                            asChild 
+                            isActive={route().current('settings.*')}
+                        >
+                            <Link 
+                                href="#"
+                                className="w-full"
+                            >
+                                <Settings className="mr-2 h-4 w-4" />
+                                <span>Settings</span>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                            <Link 
+                                href={route('logout')} 
+                                method="post" 
+                                as="button"
+                                className="w-full"
+                            >
+                                <LogOut className="mr-2 h-4 w-4" />
+                                <span>Logout</span>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
             </SidebarFooter>
         </Sidebar>
     );
