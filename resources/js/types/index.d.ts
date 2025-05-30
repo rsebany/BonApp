@@ -6,6 +6,7 @@ export interface Auth {
 }
 
 export interface BreadcrumbItem {
+    label: ReactNode;
     title: string;
     href: string;
 }
@@ -40,4 +41,15 @@ export interface User {
     created_at: string;
     updated_at: string;
     [key: string]: unknown; // This allows for additional properties...
+}
+
+export interface NavItem {
+  title: string;
+  href: string;
+  icon?: LucideIcon; // From 'lucide-react'
+  exact?: boolean;
+  badge?: string; // For notification counts
+  permission?: string; // For role-based access
+  children?: NavItem[]; // For dropdown menus
+  disabled?: boolean; // For coming soon features
 }
