@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\DriverController;
+use App\Http\Controllers\PaymentsController;
+use App\Http\Controllers\PromotionsController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\CustomerController;
@@ -43,11 +47,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('orders/{order}/rate-driver', [FoodOrderController::class, 'rateDriver'])
         ->name('orders.rate-driver');
 
+    // Drivers
+    Route::resource('drivers', DriverController::class);
+
     // Standalone resources
     Route::resource('addresses', AddressController::class)
         ->except(['index', 'show']);
     Route::resource('countries', CountryController::class)
         ->except(['create', 'edit']);
+
+    // Business Tools Group
+    Route::prefix('business-tools')->group(function () {
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+    
+    Route::prefix('payments')->group(function () {
+        Route::get('/', [PaymentsController::class, 'index'])->name('payments.index');
+        Route::get('/transactions', [PaymentsController::class, 'transactions'])->name('payments.transactions');
+    });
+    
+    Route::get('/promotions', [PromotionsController::class, 'index'])->name('promotions.index');
+});
 });
 
     // Public routes

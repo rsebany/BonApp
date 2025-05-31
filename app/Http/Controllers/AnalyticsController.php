@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FoodOrder;
+use App\Models\Analytics;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreFoodOrderRequest;
-use App\Http\Requests\UpdateFoodOrderRequest;
+use App\Http\Requests\StoreAnalyticsRequest;
+use App\Http\Requests\UpdateAnalyticsRequest;
 
-class FoodOrderController extends Controller
+class AnalyticsController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        return inertia('Orders/index', [
+        return inertia('Analytics/index', [
     ]);
     }
 
@@ -29,7 +29,7 @@ class FoodOrderController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreFoodOrderRequest $request)
+    public function store(StoreAnalyticsRequest $request)
     {
         //
     }
@@ -37,7 +37,7 @@ class FoodOrderController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(FoodOrder $foodOrder)
+    public function show(Analytics $analytics)
     {
         //
     }
@@ -45,7 +45,7 @@ class FoodOrderController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(FoodOrder $foodOrder)
+    public function edit(Analytics $analytics)
     {
         //
     }
@@ -53,7 +53,7 @@ class FoodOrderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateFoodOrderRequest $request, FoodOrder $foodOrder)
+    public function update(UpdateAnalyticsRequest $request, Analytics $analytics)
     {
         //
     }
@@ -61,7 +61,7 @@ class FoodOrderController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(FoodOrder $foodOrder)
+    public function destroy(Analytics $analytics)
     {
         //
     }

@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FoodOrder;
+use App\Models\Payments;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreFoodOrderRequest;
-use App\Http\Requests\UpdateFoodOrderRequest;
+use App\Http\Requests\StorePaymentsRequest;
+use App\Http\Requests\UpdatePaymentsRequest;
 
-class FoodOrderController extends Controller
+class PaymentsController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        return inertia('Orders/index', [
+        return inertia('Payments/index', [
     ]);
     }
 
@@ -29,7 +29,7 @@ class FoodOrderController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreFoodOrderRequest $request)
+    public function store(StorePaymentsRequest $request)
     {
         //
     }
@@ -37,7 +37,7 @@ class FoodOrderController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(FoodOrder $foodOrder)
+    public function show(Payments $payments)
     {
         //
     }
@@ -45,7 +45,7 @@ class FoodOrderController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(FoodOrder $foodOrder)
+    public function edit(Payments $payments)
     {
         //
     }
@@ -53,7 +53,7 @@ class FoodOrderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateFoodOrderRequest $request, FoodOrder $foodOrder)
+    public function update(UpdatePaymentsRequest $request, Payments $payments)
     {
         //
     }
@@ -61,7 +61,7 @@ class FoodOrderController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(FoodOrder $foodOrder)
+    public function destroy(Payments $payments)
     {
         //
     }

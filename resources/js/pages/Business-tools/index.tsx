@@ -4,8 +4,8 @@ import { Head } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Drivers',
-        href: '/drivers',
+        title: 'Business-tools',
+        href: '/Business-tools',
         label: undefined
     },
 ];
@@ -13,7 +13,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Index() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Drivers" />
+            <Head title="Dashboard" />
                 <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 </div>
         </AppLayout>

@@ -64,9 +64,9 @@ const mainNavItems: NavItem[] = [
   },
   {
     title: 'Drivers',
-    href: '#',
+    href: route('drivers.index'),
     icon: Truck,
-    isActive: false,
+    isActive: route().current('drivers.*'),
     children: [
       {
         title: 'All Drivers',
@@ -81,29 +81,29 @@ const mainNavItems: NavItem[] = [
     title: 'Business Tools',
     href: '#',
     icon: PieChart,
-    isActive: false,
+    isActive: route().current('analytics.*') || route().current('payments.*') || route().current('promotions.*'),
     children: [
       {
         title: 'Analytics',
-        href: '#',
-        isActive: false
+        href: route('analytics.index'),
+        isActive: route().current('analytics.*')
       },
       {
         title: 'Payments',
-        href: '#',
-        isActive: false,
+        href: route('payments.index'),
+        isActive: route().current('payments.*'),
         children: [
           {
             title: 'Transactions',
-            href: '#',
-            isActive: false
+            href: route('payments.transactions'),
+            isActive: route().current('payments.transactions')
           }
         ]
       },
       {
         title: 'Promotions',
-        href: '#',
-        isActive: false
+        href: route('promotions.index'),
+        isActive: route().current('promotions.*')
       }
     ]
   }

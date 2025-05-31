@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FoodOrder;
+use App\Models\Promotions;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreFoodOrderRequest;
-use App\Http\Requests\UpdateFoodOrderRequest;
+use App\Http\Requests\StorePromotionsRequest;
+use App\Http\Requests\UpdatePromotionsRequest;
 
-class FoodOrderController extends Controller
+class PromotionsController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        return inertia('Orders/index', [
+        return inertia('Promotions/index', [
     ]);
     }
 
@@ -29,7 +29,7 @@ class FoodOrderController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreFoodOrderRequest $request)
+    public function store(StorePromotionsRequest $request)
     {
         //
     }
@@ -37,7 +37,7 @@ class FoodOrderController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(FoodOrder $foodOrder)
+    public function show(Promotions $promotions)
     {
         //
     }
@@ -45,7 +45,7 @@ class FoodOrderController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(FoodOrder $foodOrder)
+    public function edit(Promotions $promotions)
     {
         //
     }
@@ -53,7 +53,7 @@ class FoodOrderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateFoodOrderRequest $request, FoodOrder $foodOrder)
+    public function update(UpdatePromotionsRequest $request, Promotions $promotions)
     {
         //
     }
@@ -61,7 +61,7 @@ class FoodOrderController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(FoodOrder $foodOrder)
+    public function destroy(Promotions $promotions)
     {
         //
     }
