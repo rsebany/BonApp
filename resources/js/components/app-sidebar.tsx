@@ -9,7 +9,6 @@ import {
   Users,
   Truck,
   Settings,
-  PieChart,
   LogOut
 } from 'lucide-react';
 import AppLogo from './app-logo';
@@ -75,38 +74,6 @@ const mainNavItems: NavItem[] = [
       }
     ]
   },
-  
-  // Business Tools (grouped)
-  {
-    title: 'Business Tools',
-    href: '#',
-    icon: PieChart,
-    isActive: route().current('analytics.*') || route().current('payments.*') || route().current('promotions.*'),
-    children: [
-      {
-        title: 'Analytics',
-        href: route('analytics.index'),
-        isActive: route().current('analytics.*')
-      },
-      {
-        title: 'Payments',
-        href: route('payments.index'),
-        isActive: route().current('payments.*'),
-        children: [
-          {
-            title: 'Transactions',
-            href: route('payments.transactions'),
-            isActive: route().current('payments.transactions')
-          }
-        ]
-      },
-      {
-        title: 'Promotions',
-        href: route('promotions.index'),
-        isActive: route().current('promotions.*')
-      }
-    ]
-  }
 ];
 
 export function AppSidebar() {

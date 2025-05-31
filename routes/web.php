@@ -1,9 +1,6 @@
 <?php
 
-use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\DriverController;
-use App\Http\Controllers\PaymentsController;
-use App\Http\Controllers\PromotionsController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\CustomerController;
@@ -17,10 +14,6 @@ use App\Http\Controllers\MenuItemController;
 
 // Authentication and Dashboard Routes
 Route::redirect('/', 'dashboard');
-
-Route::get('/', function () {
-    return Inertia::render('welcome');
-})->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', fn() => Inertia::render('dashboard') 
@@ -56,17 +49,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('countries', CountryController::class)
         ->except(['create', 'edit']);
 
-    // Business Tools Group
-    Route::prefix('business-tools')->group(function () {
-    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
-    
-    Route::prefix('payments')->group(function () {
-        Route::get('/', [PaymentsController::class, 'index'])->name('payments.index');
-        Route::get('/transactions', [PaymentsController::class, 'transactions'])->name('payments.transactions');
-    });
-    
-    Route::get('/promotions', [PromotionsController::class, 'index'])->name('promotions.index');
-});
 });
 
     // Public routes
