@@ -2,23 +2,40 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FoodOrder extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
-        'customer_id', 'restaurant_id', 'customer_address_id',
-        'order_status_id', 'assigned_driver_id', 'order_date_time',
-        'requested_delivery_date_time', 'delivery_fee', 'total_amount',
-        'cust_driver_rating', 'cust_restaurant_rating'
+        'customer_id',
+        'restaurant_id',
+        'customer_address_id',
+        'order_status_id',
+        'assigned_driver_id',
+        'order_datetime',
+        'delivery_fee',
+        'total_amount',
+        'requested_delivery_datetime',
+        'customer_driver_rating',
+        'customer_restaurant_rating',
     ];
 
-    protected $casts = [
-        'order_date_time' => 'datetime',
-        'requested_delivery_date_time' => 'datetime'
-    ];
+    protected function casts(): array
+    {
+        return [
+            'order_datetime' => 'datetime',
+            'requested_delivery_datetime' => 'datetime',
+            'delivery_fee' => 'decimal:2',
+            'total_amount' => 'decimal:2',
+            'customer_driver_rating' => 'integer',
+            'customer_restaurant_rating' => 'integer',
+        ];
+    }
 
     public function customer(): BelongsTo
     {
@@ -32,21 +49,61 @@ class FoodOrder extends Model
 
     public function customerAddress(): BelongsTo
     {
-        return $this->belongsTo(CustomerAddress::class, 'customer_address_id');
+        return $this->belongsTo(Address::class, 'customer_address_id');
     }
 
-    public function status(): BelongsTo
+    public function orderStatus(): BelongsTo
     {
-        return $this->belongsTo(OrderStatus::class, 'order_status_id');
+        return $this->belongsTo(OrderStatus::class);
     }
 
-    public function driver(): BelongsTo
+    public function assignedDriver(): BelongsTo
     {
-        return $this->belongsTo(Driver::class, 'assigned_driver_id');
+        return $this->belongsTo(User::class, 'assigned_driver_id');
     }
 
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderMenuItem::class, 'order_id');
+    }
+
+    public function getFormattedTotalAttribute(): string
+    {
+        return number_format($this->total_amount, 2);
+    }
+
+    public function getFormattedDeliveryFeeAttribute(): string
+    {
+        return number_format($this->delivery_fee, 2);
+    }
+
+    public function getSubtotalAttribute(): float
+    {
+        return $this->total_amount - $this->delivery_fee;
+    }
+
+    public function getFormattedSubtotalAttribute(): string
+    {
+        return number_format($this->getSubtotalAttribute(), 2);
+    }
+
+    public function canBeRated(): bool
+    {
+        return $this->orderStatus->status_value === OrderStatus::DELIVERED;
+    }
+
+    public function isDelivered(): bool
+    {
+        return $this->orderStatus->status_value === OrderStatus::DELIVERED;
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->orderStatus->status_value === OrderStatus::CANCELLED;
+    }
+
+    public function isPending(): bool
+    {
+        return $this->orderStatus->status_value === OrderStatus::PENDING;
     }
 }

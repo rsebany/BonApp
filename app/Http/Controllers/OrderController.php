@@ -41,8 +41,8 @@ class OrderController extends Controller
     public function store(StoreOrderRequest $request)
     {
         $order = $this->orderService->createOrder(
-            auth()->user(),
-            $request->validated()
+            $request->validated(),
+            auth()->user()
         );
         
         return redirect()->route('orders.show', $order)
@@ -69,9 +69,9 @@ class OrderController extends Controller
     public function update(UpdateOrderRequest $request, FoodOrder $order)
     {
         $this->orderService->updateOrderStatus(
-            auth()->user(),
             $order,
-            $request->validated()['status_id']
+            $request->validated()['status_id'],
+            auth()->user()
         );
         
         return redirect()->back()
@@ -82,7 +82,7 @@ class OrderController extends Controller
     {
         $this->authorize('delete', $order);
         
-        $this->orderService->cancelOrder(auth()->user(), $order);
+        $this->orderService->cancelOrder($order, auth()->user());
         
         return redirect()->route('orders.index')
             ->with('success', 'Commande annulée avec succès');
@@ -91,9 +91,9 @@ class OrderController extends Controller
     public function rate(RateOrderRequest $request, FoodOrder $order)
     {
         $this->orderService->rateOrder(
-            auth()->user(),
             $order,
-            $request->validated()
+            $request->validated(),
+            auth()->user()
         );
         
         return redirect()->back()

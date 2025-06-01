@@ -3,105 +3,108 @@
 namespace App\Services;
 
 use App\Models\FoodOrder;
+use App\Models\OrderStatus;
+use App\Models\OrderMenuItem;
 use App\Models\MenuItem;
-use App\Models\Restaurant;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 
 class OrderService
 {
-    public function getCustomerOrders(User $user): Collection
+    public function getCustomerOrders(User $user)
     {
-        return $user->orders()
-            ->with(['restaurant', 'status', 'driver', 'orderItems.menuItem'])
+        return FoodOrder::where('customer_id', $user->id)
+            ->with(['restaurant', 'status', 'orderItems.menuItem'])
             ->latest()
             ->get();
     }
 
-    public function getRestaurantOrders(User $user, Restaurant $restaurant): Collection
+    public function createOrder(array $orderData, User $user): FoodOrder
     {
-        Gate::authorize('viewAny', [FoodOrder::class, $restaurant]);
+        $orderData['customer_id'] = $user->id;
         
-        return $restaurant->orders()
-            ->with(['customer', 'status', 'driver', 'orderItems.menuItem'])
-            ->latest()
-            ->get();
-    }
-
-    public function createOrder(User $user, array $data): FoodOrder
-    {
-        return DB::transaction(function () use ($user, $data) {
+        return DB::transaction(function () use ($orderData) {
+            // Create the order
             $order = FoodOrder::create([
-                'customer_id' => $user->id,
-                'restaurant_id' => $data['restaurant_id'],
-                'customer_address_id' => $data['customer_address_id'],
-                'order_status_id' => 1, // Pending
-                'order_date_time' => now(),
-                'delivery_fee' => $data['delivery_fee'],
-                'total_amount' => 0 // Will be calculated
+                'customer_id' => $orderData['customer_id'],
+                'restaurant_id' => $orderData['restaurant_id'],
+                'customer_address_id' => $orderData['customer_address_id'],
+                'order_status_id' => $this->getPendingStatusId(),
+                'order_datetime' => now(),
+                'delivery_fee' => $orderData['delivery_fee'],
+                'total_amount' => $orderData['total_amount'],
+                'requested_delivery_datetime' => $orderData['requested_delivery_datetime'],
             ]);
 
-            $totalAmount = 0;
-            
-            foreach ($data['items'] as $item) {
-                $menuItem = MenuItem::findOrFail($item['menu_item_id']);
-                
-                $order->orderItems()->create([
-                    'menu_item_id' => $menuItem->id,
+            // Create order items
+            foreach ($orderData['items'] as $item) {
+                OrderMenuItem::create([
+                    'order_id' => $order->id,
+                    'menu_item_id' => $item['menu_item_id'],
                     'qty_ordered' => $item['quantity'],
-                    'unit_price' => $menuItem->price
                 ]);
-                
-                $totalAmount += $menuItem->price * $item['quantity'];
             }
 
-            $order->update([
-                'total_amount' => $totalAmount + $order->delivery_fee
-            ]);
-
-            return $order->load('orderItems.menuItem');
+            return $order->load(['orderItems.menuItem', 'restaurant', 'customerAddress']);
         });
     }
 
-    public function updateOrderStatus(User $user, FoodOrder $order, int $statusId): FoodOrder
+    public function calculateOrderTotal(array $items, float $deliveryFee = 0): float
     {
-        Gate::authorize('update', $order);
-        
-        $order->update(['order_status_id' => $statusId]);
-        return $order->fresh();
+        $subtotal = 0;
+
+        foreach ($items as $item) {
+            $menuItem = MenuItem::find($item['menu_item_id']);
+            if ($menuItem) {
+                $subtotal += $menuItem->price * $item['quantity'];
+            }
+        }
+
+        return $subtotal + $deliveryFee;
     }
 
-    public function cancelOrder(User $user, FoodOrder $order): FoodOrder
+    public function updateOrderStatus(FoodOrder $order, int $statusId, User $user): bool
     {
-        Gate::authorize('delete', $order);
-        
-        $order->update(['order_status_id' => 5]); // Cancelled
-        return $order->fresh();
+        return $order->update(['order_status_id' => $statusId]);
     }
 
-    public function rateOrder(User $user, FoodOrder $order, array $ratings): FoodOrder
+    public function cancelOrder(FoodOrder $order, User $user): bool
     {
-        Gate::authorize('rate', $order);
+        $cancelledStatus = OrderStatus::where('status_value', OrderStatus::CANCELLED)->first();
         
-        $order->update([
-            'cust_driver_rating' => $ratings['driver_rating'] ?? null,
-            'cust_restaurant_rating' => $ratings['restaurant_rating'] ?? null
+        if (!$cancelledStatus) {
+            return false;
+        }
+
+        return $order->update([
+            'order_status_id' => $cancelledStatus->id,
+            'cancelled_by_id' => $user->id,
+            'cancelled_at' => now()
         ]);
-        
-        return $order->fresh();
     }
 
-    public function getAllOrders()
+    public function assignDriver(FoodOrder $order, int $driverId): bool
     {
-        // Your implementation to get all orders
-        return FoodOrder::with([/* relationships */])->get();
+        return $order->update(['assigned_driver_id' => $driverId]);
     }
 
-    public function assignDriver(User $user, FoodOrder $order, int $driverId)
+    public function rateOrder(FoodOrder $order, array $ratingData, User $user): bool
     {
-        // Your implementation to assign driver
-        $order->update(['driver_id' => $driverId]);
+        $updateData = [];
+
+        if (isset($ratingData['restaurant_rating'])) {
+            $updateData['customer_restaurant_rating'] = $ratingData['restaurant_rating'];
+        }
+
+        if (isset($ratingData['driver_rating']) && $order->assigned_driver_id) {
+            $updateData['customer_driver_rating'] = $ratingData['driver_rating'];
+        }
+
+        return !empty($updateData) ? $order->update($updateData) : false;
+    }
+
+    private function getPendingStatusId(): int
+    {
+        return OrderStatus::where('status_value', OrderStatus::PENDING)->first()->id;
     }
 }

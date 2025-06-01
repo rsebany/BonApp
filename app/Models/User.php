@@ -92,4 +92,9 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->first_name . ' ' . $this->last_name;
     }
+
+     public function assignedOrders(): HasMany
+    {
+        return $this->hasMany(FoodOrder::class, 'assigned_driver_id');
+    }
 }
