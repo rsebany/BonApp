@@ -66,7 +66,7 @@ class RestaurantController extends Controller
             ->sort()
             ->values();
 
-        return Inertia::render('Admin/Restaurants/Index', [
+        return Inertia::render('admin/Restaurants/index', [
             'restaurants' => RestaurantResource::collection($restaurants),
             'cities' => $cities,
             'filters' => $request->only(['search', 'is_active', 'city', 'sort', 'direction']),

@@ -1,4 +1,4 @@
-import AppLayoutTemplate from '@/layouts/Admin/app/admin-app-sidebar-layout';
+import AppLayoutTemplate from '@/layouts/User/app/user-app-sidebar-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type ReactNode } from 'react';
 
@@ -8,7 +8,7 @@ interface AppLayoutProps {
 }
 
 export default ({ children, breadcrumbs, ...props }: AppLayoutProps) => (
-    <AppLayoutTemplate breadcrumbs={breadcrumbs} {...props}>
+    <AppLayoutTemplate breadcrumbs={breadcrumbs} {...props}>    
         {children}
     </AppLayoutTemplate>
 );

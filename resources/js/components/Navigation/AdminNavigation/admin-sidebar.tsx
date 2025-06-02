@@ -1,6 +1,5 @@
 import { NavFooter } from '@/components/Navigation/UserNavigation/nav-footer';
 import { NavMain } from '@/components/Navigation/UserNavigation/nav-main';
-import { NavUser } from '@/components/Navigation/UserNavigation/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
@@ -11,8 +10,7 @@ import {
     Users, 
     BarChart3, 
     Settings,
-    Folder,
-    BookOpen
+    LogOut
 } from 'lucide-react';
 import AppLogo from '../SideBar/app-logo';
 
@@ -29,7 +27,7 @@ const adminMainNavItems: NavItem[] = [
     },
     {
         title: 'Restaurants',
-        href: '/restaurants',
+        href: '/admin/restaurants',
         icon: Store,
     },
     {
@@ -42,23 +40,18 @@ const adminMainNavItems: NavItem[] = [
         href: '/admin/reports',
         icon: BarChart3,
     },
+];
+
+const adminFooterNavItems: NavItem[] = [
     {
         title: 'Settings',
         href: '/profile',
         icon: Settings,
     },
-];
-
-const adminFooterNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
+        title: 'Logout',
+        href: '/logout',
+        icon: LogOut,
     },
 ];
 
@@ -71,10 +64,6 @@ export function AdminSidebar() {
                         <SidebarMenuButton size="lg" asChild>
                             <Link href="/admin" prefetch>
                                 <AppLogo />
-                                <div className="flex flex-col gap-0.5 leading-none">
-                                    <span className="font-semibold">Food Delivery</span>
-                                    <span className="text-xs text-muted-foreground">Admin Panel</span>
-                                </div>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -87,7 +76,6 @@ export function AdminSidebar() {
 
             <SidebarFooter>
                 <NavFooter items={adminFooterNavItems} className="mt-auto" />
-                <NavUser />
             </SidebarFooter>
         </Sidebar>
     );

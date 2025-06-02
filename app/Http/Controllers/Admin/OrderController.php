@@ -24,7 +24,7 @@ class OrderController extends Controller
         $query = FoodOrder::with([
             'customer:id,first_name,last_name,email',
             'restaurant:id,restaurant_name',
-            'orderStatus:id,status_value',
+            'orderStatus:id,status',  // Changed from status_value to status
             'Driver:id,first_name,last_name'
         ]);
 
@@ -68,13 +68,13 @@ class OrderController extends Controller
         $orders = $query->paginate(15)->withQueryString();
 
         // Get filter options
-        $orderStatuses = OrderStatus::select('id', 'status_value')->get();
+        $orderStatuses = OrderStatus::select('id', 'status')->get();  // Changed from status_value to status
         $restaurants = DB::table('restaurants')
             ->select('id', 'restaurant_name')
             ->orderBy('restaurant_name')
             ->get();
 
-        return Inertia::render('Admin/Orders/Index', [
+        return Inertia::render('admin/Orders/index', [
             'orders' => OrderResource::collection($orders),
             'orderStatuses' => $orderStatuses,
             'restaurants' => $restaurants,
@@ -94,7 +94,7 @@ class OrderController extends Controller
             'restaurant:id,restaurant_name,phone,email',
             'restaurant.address:id,address_line1,address_line2,city,region,postal_code',
             'restaurant.address.country:id,country_name',
-            'orderStatus:id,status_value',
+            'orderStatus:id,status',  // Changed from status_value to status
             'driver:id,first_name,last_name,phone',
             'customerAddress:id,address_line1,address_line2,city,region,postal_code',
             'customerAddress.country:id,country_name',
@@ -107,7 +107,7 @@ class OrderController extends Controller
             ->get();
 
         // Get all order statuses
-        $orderStatuses = OrderStatus::select('id', 'status_value')->get();
+        $orderStatuses = OrderStatus::select('id', 'status')->get();  // Changed from status_value to status
 
         return Inertia::render('Admin/Orders/Show', [
             'order' => new OrderResource($order),

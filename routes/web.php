@@ -1,10 +1,13 @@
 <?php
 
 use App\Http\Controllers\AddressController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\MenuItemController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\RestaurantController as AdminRestaurantController;
 use App\Http\Controllers\Settings\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -60,29 +63,40 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-// Admin routes
-Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+// Admin routes with role-based middleware
+Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     // Admin dashboard
     Route::get('/', function () {
-        // Double vérification du rôle
-        if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
-        }
         return Inertia::render('Dashboard/Admin');
     })->name('dashboard');
-        
+    
     // Admin order management
     Route::resource('orders', AdminOrderController::class)
         ->only(['index', 'show', 'update'])
         ->names([
             'index' => 'orders.index',
-            'show' => 'orders.show',
+            'show' => 'orders.show', 
             'update' => 'orders.update',
         ]);
+
+    Route::resource('restaurants', AdminRestaurantController::class);
     
-    //Route::resource('users', UserController::class)->only(['index', 'show']);
-    //Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    // Admin user management
+    Route::resource('users', AdminUserController::class)
+        ->only(['index', 'show']);
+    
+    // Admin reports
+    Route::get('reports', [AdminReportController::class, 'index'])
+        ->name('reports.index');
 });
+
+// Logout route
+Route::post('/logout', function () {
+    auth()->logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect('/');
+})->name('logout');
 
 // Additional route files
 require __DIR__.'/auth.php';

@@ -30,13 +30,4 @@ class Restaurant extends Model
     {
         return $this->hasMany(FoodOrder::class);
     }
-
-    public function getAverageRatingAttribute(): ?float
-    {
-        $avgRating = $this->orders()
-            ->whereNotNull('customer_restaurant_rating')
-            ->avg('customer_restaurant_rating');
-
-        return $avgRating ? round($avgRating, 2) : null;
-    }
 }
