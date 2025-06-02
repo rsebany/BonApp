@@ -22,7 +22,7 @@ export default function AuthenticatedLayout({ children, header }: AuthenticatedL
     }
 
     return (
-        <UserLayout header={header}>
+        <UserLayout>
             {children}
         </UserLayout>
     );

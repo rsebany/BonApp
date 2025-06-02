@@ -1,19 +1,15 @@
-import { NavFooter } from '@/components/Navigation/UserNavigation/nav-footer';
 import { NavMain } from '@/components/Navigation/UserNavigation/nav-main';
-import { NavUser } from '@/components/Navigation/UserNavigation/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { 
-    LayoutGrid, 
-    ShoppingBag, 
-    Store, 
-    MapPin, 
-    User,
+import {
+     LayoutGrid,
+     ShoppingBag,
+     Store,
+     MapPin,
+     User,
     Heart,
-    Clock,
-    Folder,
-    BookOpen
+    Clock
 } from 'lucide-react';
 import AppLogo from '../SideBar/app-logo';
 
@@ -55,19 +51,6 @@ const userMainNavItems: NavItem[] = [
     },
 ];
 
-const userFooterNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
-];
-
 export function UserSidebar() {
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -77,10 +60,6 @@ export function UserSidebar() {
                         <SidebarMenuButton size="lg" asChild>
                             <Link href="/dashboard" prefetch>
                                 <AppLogo />
-                                <div className="flex flex-col gap-0.5 leading-none">
-                                    <span className="font-semibold">Food Delivery</span>
-                                    <span className="text-xs text-muted-foreground">Customer</span>
-                                </div>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -92,8 +71,6 @@ export function UserSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={userFooterNavItems} className="mt-auto" />
-                <NavUser />
             </SidebarFooter>
         </Sidebar>
     );

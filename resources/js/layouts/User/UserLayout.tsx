@@ -5,7 +5,6 @@ import { PropsWithChildren } from 'react';
 
 interface UserLayoutProps extends PropsWithChildren {
     title?: string;
-    header?: React.ReactNode;
 }
 
 export default function UserLayout({ children, title}: UserLayoutProps) {
