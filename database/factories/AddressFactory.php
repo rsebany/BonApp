@@ -1,5 +1,4 @@
 <?php
-
 namespace Database\Factories;
 
 use App\Models\Address;
@@ -14,7 +13,7 @@ class AddressFactory extends Factory
     public function definition(): array
     {
         return [
-            'customer_id' => User::factory(),
+            'user_id' => User::factory(), // Changed from customer_id to user_id
             'unit_number' => $this->faker->optional()->numberBetween(1, 999),
             'street_number' => $this->faker->buildingNumber(),
             'address_line1' => $this->faker->streetAddress(),

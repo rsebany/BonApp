@@ -79,6 +79,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             'show' => 'orders.show',
             'update' => 'orders.update',
         ]);
+    
+    //Route::resource('users', UserController::class)->only(['index', 'show']);
+    //Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
 });
 
 // Additional route files

@@ -40,6 +40,10 @@ const activeItemStyles = 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral
 
 interface AppHeaderProps {
     breadcrumbs?: BreadcrumbItem[];
+    title: string;
+    showSearch?: boolean;   
+    showNotifications?: boolean;
+    showCart?: boolean;
 }
 
 export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
@@ -158,7 +162,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                     <Avatar className="size-8 overflow-hidden rounded-full">
                                         <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
                                         <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
-                                            {getInitials(auth.user.name)}
+                                            {getInitials(auth.user.name ||'')}
                                         </AvatarFallback>
                                     </Avatar>
                                 </Button>

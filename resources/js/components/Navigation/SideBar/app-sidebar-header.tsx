@@ -1,6 +1,7 @@
 import { Breadcrumbs } from '@/components/Navigation/Breadcrumb/breadcrumbs';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
+import { Button } from '@/components/ui/button'; // Assuming you have a Button component
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
     return (
@@ -9,6 +10,17 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                 <SidebarTrigger className="-ml-1" />
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
+            {/* Add this button wherever you want it to appear */}
+            <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                    console.log('Open sidebar');
+                }}
+                className="ml-auto"
+            >
+                Open Sidebar
+            </Button>
         </header>
     );
 }
