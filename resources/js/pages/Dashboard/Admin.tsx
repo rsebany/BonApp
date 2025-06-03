@@ -7,7 +7,7 @@ export default function AdminDashboard() {
         <AdminLayout title="Dashboard">
             <Head title="Admin - Dashboard" />
             
-            <main className="flex flex-1 flex-col gap-4 p-4 bg-gray-50">
+            <main className="flex flex-1 flex-col gap-4  p-4 bg-gray-50">
                 < AdminMain />
             </main>
         </AdminLayout>

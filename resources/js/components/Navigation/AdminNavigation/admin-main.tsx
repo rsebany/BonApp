@@ -140,7 +140,7 @@ export function AdminMain() {
   const [timeRange, setTimeRange] = useState('7d');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 from-orange-50 via-yellow-50 to-orange-50">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

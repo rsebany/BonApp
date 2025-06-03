@@ -6,10 +6,10 @@ import { Head } from '@inertiajs/react';
 
 export default function UserDashboard() {
     return (
-        <UserLayout title="Dashboard">
-            <Head title="Dashboard" />
+        <UserLayout title="Home">
+            <Head title="Home" />
             
-            <main className="flex flex-1 flex-col gap-4 p-4 bg-gray-50">
+            <main className="flex flex-1 flex-col gap-4 p-4 from-orange-50 via-yellow-50 to-orange-50">
                 <AppRouter>
                     <UserMain />
                 </AppRouter>

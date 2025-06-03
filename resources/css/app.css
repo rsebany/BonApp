@@ -57,6 +57,18 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    /* Food Delivery App Custom Colors */
+    --color-warm-yellow: #FFE194;
+    --color-warm-orange: #FFB085;
+    --color-warm-blue: #90AACB;
+    --color-warm-coral: #F77575;
+    
+    /* Additional warm tones for variety */
+    --color-warm-light: #FFF8E7;
+    --color-warm-dark: #8B4513;
+    --color-warm-success: #90C695;
+    --color-warm-warning: #FFD700;
 }
 
 /*
@@ -78,74 +90,76 @@
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.87 0 0);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
+    /* WARM Color Palette for Food Delivery App */
+    --background: #FFF8E7; /* Warm light background */
+    --foreground: #2D1810; /* Dark brown text */
+    --card: #FFFFFF;
+    --card-foreground: #2D1810;
+    --popover: #FFFFFF;
+    --popover-foreground: #2D1810;
+    --primary: #FFB085; /* Warm orange primary */
+    --primary-foreground: #FFFFFF;
+    --secondary: #FFE194; /* Warm yellow secondary */
+    --secondary-foreground: #2D1810;
+    --muted: #F5F0E8;
+    --muted-foreground: #8B7355;
+    --accent: #F77575; /* Warm coral accent */
+    --accent-foreground: #FFFFFF;
+    --destructive: #DC2626;
+    --destructive-foreground: #FFFFFF;
+    --border: #E8DCC6;
+    --input: #FFFFFF;
+    --ring: #FFB085;
+    --chart-1: #FFB085;
+    --chart-2: #F77575;
+    --chart-3: #90AACB;
+    --chart-4: #FFE194;
+    --chart-5: #90C695;
+    --radius: 0.75rem;
+    --sidebar: #FFFFFF;
+    --sidebar-foreground: #2D1810;
+    --sidebar-primary: #FFB085;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #FFE194;
+    --sidebar-accent-foreground: #2D1810;
+    --sidebar-border: #E8DCC6;
+    --sidebar-ring: #FFB085;
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.145 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
-    --border: oklch(0.269 0 0);
-    --input: oklch(0.269 0 0);
-    --ring: oklch(0.439 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: oklch(0.439 0 0);
+    /* Dark mode with warm undertones */
+    --background: #1A1611;
+    --foreground: #F5F0E8;
+    --card: #2D2520;
+    --card-foreground: #F5F0E8;
+    --popover: #2D2520;
+    --popover-foreground: #F5F0E8;
+    --primary: #FFB085;
+    --primary-foreground: #1A1611;
+    --secondary: #3D3429;
+    --secondary-foreground: #F5F0E8;
+    --muted: #3D3429;
+    --muted-foreground: #A69B87;
+    --accent: #F77575;
+    --accent-foreground: #FFFFFF;
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --border: #3D3429;
+    --input: #3D3429;
+    --ring: #FFB085;
+    --chart-1: #FFB085;
+    --chart-2: #F77575;
+    --chart-3: #90AACB;
+    --chart-4: #FFE194;
+    --chart-5: #90C695;
+    --sidebar: #2D2520;
+    --sidebar-foreground: #F5F0E8;
+    --sidebar-primary: #FFB085;
+    --sidebar-primary-foreground: #1A1611;
+    --sidebar-accent: #3D3429;
+    --sidebar-accent-foreground: #F5F0E8;
+    --sidebar-border: #3D3429;
+    --sidebar-ring: #FFB085;
 }
 
 @layer base {
@@ -155,5 +169,231 @@
 
     body {
         @apply bg-background text-foreground;
+        font-family: var(--font-sans);
+    }
+}
+
+/* Food Delivery App Specific Styles */
+@layer components {
+    /* Header & Navigation */
+    .navbar {
+        @apply bg-white/90 backdrop-blur-sm border-b border-warm-orange/20 sticky top-0 z-50;
+    }
+    
+    .nav-link {
+        @apply text-foreground hover:text-primary transition-colors duration-200 font-medium;
+    }
+    
+    .nav-link.active {
+        @apply text-primary border-b-2 border-primary;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        @apply bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl;
+    }
+    
+    .btn-secondary {
+        @apply bg-secondary hover:bg-secondary/90 text-secondary-foreground px-6 py-3 rounded-lg font-semibold transition-all duration-200;
+    }
+    
+    .btn-accent {
+        @apply bg-accent hover:bg-accent/90 text-accent-foreground px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl;
+    }
+    
+    .btn-outline {
+        @apply border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground px-6 py-3 rounded-lg font-semibold transition-all duration-200;
+    }
+
+    /* Cards */
+    .food-card {
+        @apply bg-card border border-border rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1;
+    }
+    
+    .restaurant-card {
+        @apply bg-card border border-border rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2;
+    }
+    
+    .menu-item-card {
+        @apply bg-card border border-border rounded-lg p-4 hover:border-primary/50 transition-all duration-200 cursor-pointer;
+    }
+
+    /* Order Status */
+    .order-status {
+        @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+    }
+    
+    .order-status.pending {
+        @apply bg-yellow-100 text-yellow-800;
+    }
+    
+    .order-status.confirmed {
+        @apply bg-blue-100 text-blue-800;
+    }
+    
+    .order-status.preparing {
+        @apply bg-orange-100 text-orange-800;
+    }
+    
+    .order-status.ready {
+        @apply bg-green-100 text-green-800;
+    }
+    
+    .order-status.delivered {
+        @apply bg-green-100 text-green-800;
+    }
+    
+    .order-status.cancelled {
+        @apply bg-red-100 text-red-800;
+    }
+
+    /* Forms */
+    .form-input {
+        @apply w-full px-4 py-3 border border-border rounded-lg bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all duration-200;
+    }
+    
+    .form-label {
+        @apply block text-sm font-semibold text-foreground mb-2;
+    }
+    
+    .form-error {
+        @apply text-red-500 text-sm mt-1;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        @apply bg-gradient-to-br from-secondary/20 via-background to-primary/10 py-20;
+    }
+    
+    .hero-title {
+        @apply text-5xl font-bold text-foreground mb-6 leading-tight;
+    }
+    
+    .hero-subtitle {
+        @apply text-xl text-muted-foreground mb-8 leading-relaxed;
+    }
+
+    /* Food Categories */
+    .category-item {
+        @apply flex flex-col items-center p-6 bg-card rounded-xl border border-border hover:border-primary/50 transition-all duration-200 cursor-pointer hover:-translate-y-1;
+    }
+    
+    .category-icon {
+        @apply w-16 h-16 mb-4 text-primary;
+    }
+    
+    .category-name {
+        @apply font-semibold text-foreground text-center;
+    }
+
+    /* Search Bar */
+    .search-bar {
+        @apply relative w-full max-w-md mx-auto;
+    }
+    
+    .search-input {
+        @apply w-full pl-12 pr-4 py-3 border border-border rounded-full bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent;
+    }
+    
+    .search-icon {
+        @apply absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5;
+    }
+
+    /* Cart */
+    .cart-item {
+        @apply flex items-center justify-between p-4 bg-card border border-border rounded-lg mb-3;
+    }
+    
+    .cart-summary {
+        @apply bg-card border border-border rounded-xl p-6 sticky top-24;
+    }
+    
+    .cart-total {
+        @apply text-2xl font-bold text-foreground border-t border-border pt-4;
+    }
+
+    /* Rating */
+    .rating-star {
+        @apply text-yellow-400;
+    }
+    
+    .rating-star.empty {
+        @apply text-gray-300;
+    }
+
+    /* Loading States */
+    .loading-spinner {
+        @apply animate-spin rounded-full h-8 w-8 border-b-2 border-primary;
+    }
+    
+    .skeleton {
+        @apply animate-pulse bg-muted rounded;
+    }
+
+    /* Responsive Design */
+    .container {
+        @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    }
+    
+    .grid-responsive {
+        @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6;
+    }
+
+    /* Animations */
+    .fade-in {
+        @apply animate-in fade-in duration-500;
+    }
+    
+    .slide-up {
+        @apply animate-in slide-in-from-bottom-4 duration-300;
+    }
+    
+    .scale-in {
+        @apply animate-in zoom-in-95 duration-200;
+    }
+
+    /* Utility Classes for Warm Colors */
+    .text-warm-orange {
+        color: var(--color-warm-orange);
+    }
+    
+    .text-warm-coral {
+        color: var(--color-warm-coral);
+    }
+    
+    .text-warm-yellow {
+        color: var(--color-warm-yellow);
+    }
+    
+    .text-warm-blue {
+        color: var(--color-warm-blue);
+    }
+    
+    .bg-warm-orange {
+        background-color: var(--color-warm-orange);
+    }
+    
+    .bg-warm-coral {
+        background-color: var(--color-warm-coral);
+    }
+    
+    .bg-warm-yellow {
+        background-color: var(--color-warm-yellow);
+    }
+    
+    .bg-warm-blue {
+        background-color: var(--color-warm-blue);
+    }
+    
+    .bg-warm-light {
+        background-color: var(--color-warm-light);
+    }
+    
+    .border-warm-orange {
+        border-color: var(--color-warm-orange);
+    }
+    
+    .border-warm-coral {
+        border-color: var(--color-warm-coral);
     }
 }

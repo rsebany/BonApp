@@ -15,10 +15,10 @@ export default function UserLayout({ children, title}: UserLayoutProps) {
                 <AppHeader 
                     title={title || 'Dashboard'}
                     showSearch={true}
-                    showNotifications={true}
+                    /*showNotifications={true}*/
                     showCart={true}
                 />
-                <main className="flex flex-1 flex-col gap-4 p-4 pt-6">
+                <main className="flex flex-1 flex-col gap-4  p-4 pt-6">
                     {children}
                 </main>
             </SidebarInset>
