@@ -1,4 +1,4 @@
-import { Bell, Search, Settings, User, LogOut, Shield } from 'lucide-react';
+import { Bell, Search, Settings, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import { Link } from '@inertiajs/react';
 
 interface AdminHeaderProps {
     title?: string;
@@ -21,44 +22,70 @@ export function AdminHeader({ title = 'Admin Dashboard' }: AdminHeaderProps) {
     const { auth } = usePage().props as any;
     const user = auth?.user;
     const [searchQuery, setSearchQuery] = useState('');
+    const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-    const handleLogout = () => {
-        window.location.href = '/logout';
-    };
+    // Mock notifications data
+    const notifications = [
+        { id: 1, text: 'New user registered', time: '2 minutes ago' },
+        { id: 2, text: 'System update available', time: '1 hour ago' },
+        { id: 3, text: 'New message received', time: '3 hours ago' },
+    ];
 
     return (
         <div className="flex items-center justify-between w-full">
             {/* Left - Logo & Title */}
             <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                    <Shield className="h-5 w-5 text-white" />
-                </div>
-                <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
+                <h1 className={`text-lg font-semibold text-red-500`}>{title}</h1>
             </div>
 
             {/* Center - Search */}
             <div className="flex-1 max-w-md mx-8">
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <div className="relative flex items-center">
                     <Input
                         type="search"
                         placeholder="Search..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 h-9 bg-gray-50 border-gray-200 rounded-full focus:bg-white"
+                        className="pl-4 pr-12 h-9 bg-gray-50 border-gray-200 rounded-r-none focus:bg-white focus-visible:ring-0 focus-visible:ring-offset-0"
                     />
+                    <Button 
+                        className="h-9 rounded-l-none px-4 bg-gray-100 hover:bg-gray-200 border border-l-0 border-gray-200 text-gray-600"
+                        onClick={() => console.log('Search:', searchQuery)}
+                    >
+                        <Search className="h-4 w-4" />
+                    </Button>
                 </div>
             </div>
 
             {/* Right - Actions */}
             <div className="flex items-center space-x-3">
                 {/* Notifications */}
-                <Button variant="ghost" size="sm" className="relative h-9 w-9 rounded-full">
-                    <Bell className="h-4 w-4" />
-                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-xs text-white flex items-center justify-center">
-                        3
-                    </span>
-                </Button>
+                <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="relative h-9 w-9 rounded-full">
+                            <Bell className="h-4 w-4" />
+                            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-xs text-white flex items-center justify-center">
+                                {notifications.length}
+                            </span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-80 p-0" align="end">
+                        <div className="p-2 border-b">
+                            <h3 className="font-medium">Notifications</h3>
+                        </div>
+                        <div className="max-h-60 overflow-y-auto">
+                            {notifications.map((notification) => (
+                                <DropdownMenuItem key={notification.id} className="flex flex-col items-start p-3 hover:bg-gray-50">
+                                    <p className="text-sm">{notification.text}</p>
+                                    <p className="text-xs text-gray-500">{notification.time}</p>
+                                </DropdownMenuItem>
+                            ))}
+                        </div>
+                        <DropdownMenuItem className="justify-center text-sm text-blue-600 hover:bg-gray-50">
+                            View all notifications
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
 
                 {/* User Menu */}
                 <DropdownMenu>
@@ -86,18 +113,24 @@ export function AdminHeader({ title = 'Admin Dashboard' }: AdminHeaderProps) {
                             </div>
                         </div>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                            <User className="mr-2 h-4 w-4" />
-                            Profile
+                        <DropdownMenuItem asChild>
+                            <Link href={route('admin.profile.edit')} className="w-full">
+                                <User className="mr-2 h-4 w-4" />
+                                Profile
+                            </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <Settings className="mr-2 h-4 w-4" />
-                            Settings
+                        <DropdownMenuItem asChild>
+                            <Link href={route('admin.profile.edit')} className="w-full">
+                                <Settings className="mr-2 h-4 w-4" />
+                                Settings
+                            </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-                            <LogOut className="mr-2 h-4 w-4" />
-                            Sign out
+                        <DropdownMenuItem asChild>
+                            <Link href={route('logout')} method="post" as="button" className="w-full text-red-600">
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Sign out
+                            </Link>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

@@ -17,6 +17,12 @@ export interface Order {
     created_at: string;
     scheduled_for?: string;
     special_instructions?: string;
+    user: {
+    name: string;
+  };
+    restaurant?: {
+        name: string;
+    };
 }
 
 export interface OrderItem {

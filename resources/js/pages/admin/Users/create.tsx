@@ -1,90 +1,85 @@
 import AdminLayout from "@/layouts/Admin/AdminLayout";
-import { Head, useForm, Link } from "@inertiajs/react";
+import { Head, useForm } from "@inertiajs/react";
 import { Button, Input, Select } from "@/components/ui";
-import { EditUserForm } from "@/types/forms";
 
-interface User {
-    id: number;
+interface CreateUserForm {
     name: string;
     email: string;
+    password: string;
+    password_confirmation: string;
     role: string;
+    [key: string]: string;
 }
 
-export default function EditUserPage({ user }: { user: User }) {
-    const { data, setData, put, processing, errors } = useForm<EditUserForm>({
-        name: user.name,
-        email: user.email,
-        role: user.role,
+export default function CreateUserPage() {
+    const { data, setData, post, processing} = useForm<CreateUserForm>({
+        name: '',
+        email: '',
         password: '',
         password_confirmation: '',
+        role: 'customer',
     });
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        put(route('admin.users.update', user.id));
+        post(route('admin.users.store'));
     };
 
     return (
-        <AdminLayout title={`Edit User - ${user.name}`}>
-            <Head title={`Edit User - ${user.name}`} />
+        <AdminLayout title="Add New User">
+            <Head title="Add New User" />
             <div className="space-y-6">
                 <div className="bg-white rounded-lg shadow p-6">
-                    <h2 className="text-lg font-medium mb-6">Edit User</h2>
+                    <h2 className="text-lg font-medium mb-6">Add New User</h2>
                     
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <Input
-                            label="Full Name"
                             value={data.name}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('name', e.target.value)}
-                            error={errors.name}
+                            /*onError={errors.name}*/
                             required
                         />
                         
                         <Input
-                            label="Email"
                             type="email"
                             value={data.email}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('email', e.target.value)}
-                            error={errors.email}
+                            /*error={errors.email}*/
                             required
                         />
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Input
-                                label="Password (leave blank to keep current)"
                                 type="password"
                                 value={data.password}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('password', e.target.value)}
-                                error={errors.password}
+                                /*error={errors.password}*/
+                                required
                             />
                             
                             <Input
-                                label="Confirm Password"
                                 type="password"
                                 value={data.password_confirmation}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('password_confirmation', e.target.value)}
-                                error={errors.password_confirmation}
+                                /*error={errors.password_confirmation}*/
+                                required
                             />
                         </div>
                         
                         <Select
-                            label="Role"
                             value={data.role}
-                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setData('role', e.target.value)}
-                            error={errors.role}
-                            options={[
+                            /*onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setData('role', e.target.value)}*/
+                            /*error={errors.role}*/
+                            /*options={[
                                 { value: 'admin', label: 'Administrator' },
                                 { value: 'manager', label: 'Manager' },
                                 { value: 'customer', label: 'Customer' },
-                            ]}
+                            ]}*/
                         />
                         
-                        <div className="flex justify-end space-x-3 pt-4">
-                            <Button variant="outline" asChild>
-                                <Link href={route('admin.users.index')}>Cancel</Link>
-                            </Button>
+                        <div className="flex justify-end pt-4">
                             <Button type="submit" disabled={processing}>
-                                {processing ? 'Updating...' : 'Update User'}
+                                {processing ? 'Creating...' : 'Create User'}
                             </Button>
                         </div>
                     </form>

@@ -23,6 +23,7 @@ import {
   ResponsiveContainer,
   Line
 } from 'recharts';
+import { Link } from '@inertiajs/react';
 
 // Define types for your data
 type StatCardProps = {
@@ -332,13 +333,34 @@ export function AdminMain() {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Add Restaurant', icon: MapPin, color: 'bg-blue-500' },
-            { label: 'Manage Orders', icon: ShoppingBag, color: 'bg-green-500' },
-            { label: 'View Reports', icon: TrendingUp, color: 'bg-purple-500' },
-            { label: 'User Management', icon: Users, color: 'bg-orange-500' }
+            { 
+              label: 'Add Restaurant', 
+              icon: MapPin, 
+              color: 'bg-blue-500',
+              href: route('admin.restaurants.create')
+            },
+            { 
+              label: 'Manage Orders', 
+              icon: ShoppingBag, 
+              color: 'bg-green-500',
+              href: route('admin.orders.index')
+            },
+            { 
+              label: 'View Reports', 
+              icon: TrendingUp, 
+              color: 'bg-purple-500',
+              href: route('admin.reports.index')
+            },
+            { 
+              label: 'User Management', 
+              icon: Users, 
+              color: 'bg-orange-500',
+              href: route('admin.users.index')
+            }
           ].map((action, index) => (
-            <button
+            <Link
               key={index}
+              href={action.href}
               className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors group"
             >
               <div className={`p-2 rounded-lg ${action.color}`}>
@@ -347,10 +369,10 @@ export function AdminMain() {
               <span className="font-medium text-gray-700 group-hover:text-gray-900">
                 {action.label}
               </span>
-            </button>
+            </Link>
           ))}
         </div>
-      </div> 
+      </div>
     </div>
   );
 }

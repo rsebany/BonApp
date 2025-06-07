@@ -82,7 +82,7 @@ class RestaurantController extends Controller
 
         $countries = Country::select('id', 'country_name')->orderBy('country_name')->get();
 
-        return Inertia::render('Admin/Restaurants/Create', [
+        return Inertia::render('admin/Restaurants/create', [
             'countries' => $countries,
         ]);
     }

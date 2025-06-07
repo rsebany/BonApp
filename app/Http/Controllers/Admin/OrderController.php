@@ -8,6 +8,7 @@ use App\Models\FoodOrder;
 use App\Models\Order;
 use App\Models\OrderStatus;
 use App\Http\Resources\OrderResource;
+use App\Models\Restaurant;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +25,7 @@ class OrderController extends Controller
         $query = FoodOrder::with([
             'customer:id,first_name,last_name,email',
             'restaurant:id,restaurant_name',
-            'orderStatus:id,status',  // Changed from status_value to status
+            'orderStatus:id,name as status',  // Using 'as status' to maintain consistent naming in frontend
             'Driver:id,first_name,last_name'
         ]);
 
@@ -47,13 +48,17 @@ class OrderController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('customer', function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            })->orWhereHas('restaurant', function ($q) use ($search) {
-                $q->where('restaurant_name', 'like', "%{$search}%");
-            })->orWhere('id', 'like', "%{$search}%");
+            $query->where(function($q) use ($search) {
+                $q->whereHas('customer', function ($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+                })
+                ->orWhereHas('restaurant', function ($q) use ($search) {
+                    $q->where('restaurant_name', 'like', "%{$search}%");
+                })
+                ->orWhere('id', 'like', "%{$search}%");
+            });
         }
 
         // Apply sorting
@@ -68,9 +73,8 @@ class OrderController extends Controller
         $orders = $query->paginate(15)->withQueryString();
 
         // Get filter options
-        $orderStatuses = OrderStatus::select('id', 'status')->get();  // Changed from status_value to status
-        $restaurants = DB::table('restaurants')
-            ->select('id', 'restaurant_name')
+        $orderStatuses = OrderStatus::select('id', 'name as status')->get();
+        $restaurants = Restaurant::select('id', 'restaurant_name')
             ->orderBy('restaurant_name')
             ->get();
 
@@ -109,7 +113,7 @@ class OrderController extends Controller
         // Get all order statuses
         $orderStatuses = OrderStatus::select('id', 'status')->get();  // Changed from status_value to status
 
-        return Inertia::render('Admin/Orders/Show', [
+        return Inertia::render('admin/Orders/Show', [
             'order' => new OrderResource($order),
             'availableDrivers' => $availableDrivers,
             'orderStatuses' => $orderStatuses,

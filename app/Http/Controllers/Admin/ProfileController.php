@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Settings;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Settings\ProfileUpdateRequest;
+use \App\Http\Requests\Settings\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,18 +14,19 @@ use Inertia\Response;
 class ProfileController extends Controller
 {
     /**
-     * Show the user's profile settings page.
+     * Show the admin's profile settings page.
      */
     public function edit(Request $request): Response
     {
-        return Inertia::render('User/settings/profile', [
+        return Inertia::render('admin/Settings/profile', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'admin' => $request->user(),
             'status' => $request->session()->get('status'),
         ]);
     }
 
     /**
-     * Update the user's profile settings.
+     * Update the admin's profile settings.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
@@ -37,11 +38,11 @@ class ProfileController extends Controller
 
         $request->user()->save();
 
-        return to_route('profile.edit');
+        return redirect()->route('admin.profile.edit')->with('status', 'Profile updated!');
     }
 
     /**
-     * Delete the user's account.
+     * Delete the admin's account.
      */
     public function destroy(Request $request): RedirectResponse
     {

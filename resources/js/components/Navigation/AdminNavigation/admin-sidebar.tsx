@@ -19,27 +19,27 @@ import AppLogo from '../SideBar/app-logo';
 const adminMainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: '/admin',
+        href: route('admin.dashboard'),
         icon: LayoutDashboard,
     },
     {
         title: 'Orders',
-        href: '/admin/orders',
+        href: route('admin.orders.index'),
         icon: ShoppingBag,
     },
     {
         title: 'Restaurants',
-        href: '/admin/restaurants',
+        href: route('admin.restaurants.index'),
         icon: Store,
     },
     {
         title: 'Users',
-        href: '/admin/users',
+        href: route('admin.users.index'),
         icon: Users,
     },
     {
         title: 'Reports',
-        href: '/admin/reports',
+        href: route('admin.reports.index'),
         icon: BarChart3,
     },
 ];
@@ -47,13 +47,15 @@ const adminMainNavItems: NavItem[] = [
 const adminFooterNavItems: NavItem[] = [
     {
         title: 'Settings',
-        href: '/profile',
+        href: route('admin.profile.edit'),
         icon: Settings,
     },
     {
         title: 'Logout',
-        href: '/logout',
+        href: route('logout'),
         icon: LogOut,
+        method: 'post',
+        as: 'button'
     },
 ];
 
@@ -73,41 +75,42 @@ function CustomSidebarTrigger() {
 }
 
 export function AdminSidebar() {
-     const { open } = useSidebar();
+    const { open } = useSidebar();
+    
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
                 {/* When sidebar is open - show logo and toggle side by side */}
-                                {open && (
-                                    <div className="flex items-center justify-between w-full">
-                                        <SidebarMenu>
-                                            <SidebarMenuItem>
-                                                <SidebarMenuButton size="lg" asChild>
-                                                    <Link href="/admin" prefetch>
-                                                        <AppLogo />
-                                                    </Link>
-                                                </SidebarMenuButton>
-                                            </SidebarMenuItem>
-                                        </SidebarMenu>
-                                        <CustomSidebarTrigger />
-                                    </div>
-                                )}
-                                
-                                {/* When sidebar is closed - show logo and toggle stacked */}
-                                {!open && (
-                                    <div className="flex flex-col items-center space-y-2 w-full">
-                                        <SidebarMenu>
-                                            <SidebarMenuItem>
-                                                <SidebarMenuButton size="lg" asChild>
-                                                    <Link href="/admin" prefetch>
-                                                        <AppLogo />
-                                                    </Link>
-                                                </SidebarMenuButton>
-                                            </SidebarMenuItem>
-                                        </SidebarMenu>
-                                        <CustomSidebarTrigger />
-                                    </div>
-                                )}
+                {open && (
+                    <div className="flex items-center justify-between w-full">
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton size="lg" asChild>
+                                    <Link href={route('admin.dashboard')} prefetch>
+                                        <AppLogo />
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                        <CustomSidebarTrigger />
+                    </div>
+                )}
+                
+                {/* When sidebar is closed - show logo and toggle stacked */}
+                {!open && (
+                    <div className="flex flex-col items-center space-y-2 w-full">
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton size="lg" asChild>
+                                    <Link href={route('admin.dashboard')} prefetch>
+                                        <AppLogo />
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                        <CustomSidebarTrigger />
+                    </div>
+                )}
             </SidebarHeader>
 
             <SidebarContent>

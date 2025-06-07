@@ -35,8 +35,9 @@ export interface NavItem {
     href: string;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    method?: 'get' | 'post' | 'put' | 'patch' | 'delete';
+    as?: 'a' | 'button';
 }
-
 export interface SharedData {
     name: string;
     quote: { message: string; author: string };
@@ -46,4 +47,7 @@ export interface SharedData {
     [key: string]: unknown;
 }
     
-    
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
+  error?: string;
+}

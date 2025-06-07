@@ -13,7 +13,7 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    public function index(Request $request)
+   public function index(Request $request)
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
@@ -24,29 +24,20 @@ class UserController extends Controller
 
         // Apply filters
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
-            });
-        }
+        $search = $request->search;
+        $query->where(function ($q) use ($search) {
+            $q->where('first_name', 'like', "%{$search}%")
+            ->orWhere('last_name', 'like', "%{$search}%")
+            ->orWhere('email', 'like', "%{$search}%");
+        });
+    }
 
         if ($request->filled('role')) {
             $query->where('role', $request->role);
         }
 
-        if ($request->filled('is_active')) {
-            $query->where('is_active', $request->boolean('is_active'));
-        }
-
         if ($request->filled('email_verified')) {
-            if ($request->boolean('email_verified')) {
-                $query->whereNotNull('email_verified_at');
-            } else {
-                $query->whereNull('email_verified_at');
-            }
+            $query->whereNotNull('email_verified_at');
         }
 
         if ($request->filled('date_from')) {
@@ -61,30 +52,36 @@ class UserController extends Controller
         $sortField = $request->get('sort', 'created_at');
         $sortDirection = $request->get('direction', 'desc');
         
-        $allowedSorts = ['first_name', 'last_name', 'email', 'created_at', 'role'];
+        $allowedSorts = ['name', 'email', 'created_at', 'role']; // Updated to match your fields
         if (in_array($sortField, $allowedSorts)) {
             $query->orderBy($sortField, $sortDirection);
         }
 
-        $users = $query->paginate(15)->withQueryString();
+        // Get all users without pagination since your component doesn't handle it
+        $users = $query->get();
 
-        // Get statistics
         $stats = [
             'total_users' => User::count(),
             'customers' => User::where('role', 'customer')->count(),
             'admins' => User::where('role', 'admin')->count(),
-            'active_users' => User::where('is_active', true)->count(),
             'verified_users' => User::whereNotNull('email_verified_at')->count(),
             'new_this_month' => User::whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->count(),
         ];
 
-        return Inertia::render('Admin/Users/Index', [
-            'users' => UserResource::collection($users),
+        return Inertia::render('admin/Users/index', [ 
+            'users' => $users->map(fn($user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'email_verified_at' => $user->email_verified_at,
+                'created_at' => $user->created_at,
+            ]),
             'stats' => $stats,
             'filters' => $request->only([
-                'search', 'role', 'is_active', 'email_verified', 
+                'search', 'role', 'email_verified', 
                 'date_from', 'date_to', 'sort', 'direction'
             ]),
         ]);
@@ -157,7 +154,7 @@ class UserController extends Controller
             ->where('customer_addresses.customer_id', $id)
             ->get();
 
-        return Inertia::render('Admin/Users/Show', [
+        return Inertia::render('admin/Users/show', [
             'user' => new UserResource($user),
             'userStats' => $userStats,
             'addresses' => $addresses,
@@ -410,5 +407,15 @@ class UserController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    public function create()
+    {
+        // Ensure user is admin
+        if (auth()->user()->role !== 'admin') {
+            return redirect('/dashboard');
+        }
+
+        return Inertia::render('admin/Users/create');
     }
 }

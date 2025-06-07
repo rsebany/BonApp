@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AddressController;
+use App\Http\Controllers\Admin\ProfileController as ProfileAdmin;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\OrderController;
@@ -83,11 +84,26 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     
     // Admin user management
     Route::resource('users', AdminUserController::class)
-        ->only(['index', 'show']);
+    ->only(['index', 'show', 'create', 'store', 'edit', 'update', 'destroy'])
+    ->names([
+        'index' => 'users.index',
+        'create' => 'users.create',
+        'store' => 'users.store',
+        'show' => 'users.show',
+        'edit' => 'users.edit',
+        'update' => 'users.update',
+        'destroy' => 'users.destroy',
+    ]);
     
     // Admin reports
     Route::get('reports', [AdminReportController::class, 'index'])
         ->name('reports.index');
+
+    Route::prefix('profile')->group(function () {
+        Route::get('/', [ProfileAdmin::class, 'edit'])->name('profile.edit');
+        Route::patch('/', [ProfileAdmin::class, 'update'])->name('profile.update');
+        Route::delete('/', [ProfileAdmin::class, 'destroy'])->name('profile.destroy');
+    });
 });
 
 // Logout route

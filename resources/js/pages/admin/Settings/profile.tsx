@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import SettingsLayout from '@/layouts/settings/layout';
-import UserLayout from '@/layouts/User/UserLayout';
+import AdminLayout from '@/layouts/Admin/AdminLayout';
 
 
 type ProfileForm = {
@@ -29,13 +29,13 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        patch(route('profile.update'), {
+        patch(route('admin.profile.update'), {
             preserveScroll: true,
         });
     };
 
     return (
-        <UserLayout>
+        <AdminLayout>
             <Head title="Profile settings" />
 
             <SettingsLayout>
@@ -116,6 +116,6 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
 
                 <DeleteUser />
             </SettingsLayout>
-        </UserLayout>
+        </AdminLayout>
     );
 }
