@@ -27,7 +27,8 @@ class User extends Authenticatable
         'phone',
         'birth_date',
         'role',
-        'last_login_at'
+        'last_login_at',
+        'is_available'
     ];
     /**
      * The attributes that should be hidden for serialization.
@@ -50,6 +51,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'password' => 'hashed',
+            'is_available' => 'boolean',
         ];
     }
 

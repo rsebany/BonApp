@@ -16,9 +16,8 @@ class Restaurant extends Model
         'address_id',
     ];
 
-    public function address(): BelongsTo
-    {
-        return $this->belongsTo(Address::class);
+    public function address() {
+        return $this->belongsTo(Address::class, 'address_id');
     }
 
     public function menuItems(): HasMany

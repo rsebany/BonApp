@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-
 @plugin 'tailwindcss-animate';
 
 @source '../views';
@@ -9,11 +8,11 @@
 
 @theme {
     --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        'Circular', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
-    --radius-lg: var(--radius);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-sm: calc(var(--radius) - 4px);
+    --radius-lg: 12px;
+    --radius-md: 8px;
+    --radius-sm: 4px;
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -58,108 +57,98 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 
-    /* Food Delivery App Custom Colors */
-    --color-warm-yellow: #FFE194;
-    --color-warm-orange: #FFB085;
-    --color-warm-blue: #90AACB;
-    --color-warm-coral: #F77575;
-    
-    /* Additional warm tones for variety */
-    --color-warm-light: #FFF8E7;
-    --color-warm-dark: #8B4513;
-    --color-warm-success: #90C695;
-    --color-warm-warning: #FFD700;
+    /* Airbnb-inspired colors */
+    --color-airbnb-red: #FF385C;
+    --color-airbnb-pink: #FF5A5F;
+    --color-airbnb-orange: #FF5A5F;
+    --color-airbnb-yellow: #FFB400;
+    --color-airbnb-dark: #222222;
+    --color-airbnb-light: #FFFFFF;
+    --color-airbnb-gray: #717171;
+    --color-airbnb-light-gray: #EBEBEB;
 }
 
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
 @layer base {
     *,
     ::after,
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
+        border-color: var(--color-airbnb-light-gray, currentColor);
     }
 }
 
 :root {
-    /* WARM Color Palette for Food Delivery App */
-    --background: #FFF8E7; /* Warm light background */
-    --foreground: #2D1810; /* Dark brown text */
+    /* Airbnb-inspired Color Palette */
+    --background: #FFFFFF;
+    --foreground: #222222;
     --card: #FFFFFF;
-    --card-foreground: #2D1810;
+    --card-foreground: #222222;
     --popover: #FFFFFF;
-    --popover-foreground: #2D1810;
-    --primary: #FFB085; /* Warm orange primary */
+    --popover-foreground: #222222;
+    --primary: #FF385C; /* Airbnb red */
     --primary-foreground: #FFFFFF;
-    --secondary: #FFE194; /* Warm yellow secondary */
-    --secondary-foreground: #2D1810;
-    --muted: #F5F0E8;
-    --muted-foreground: #8B7355;
-    --accent: #F77575; /* Warm coral accent */
+    --secondary: #EBEBEB;
+    --secondary-foreground: #222222;
+    --muted: #F7F7F7;
+    --muted-foreground: #717171;
+    --accent: #FF5A5F; /* Airbnb pink */
     --accent-foreground: #FFFFFF;
-    --destructive: #DC2626;
+    --destructive: #E53E3E;
     --destructive-foreground: #FFFFFF;
-    --border: #E8DCC6;
+    --border: #EBEBEB;
     --input: #FFFFFF;
-    --ring: #FFB085;
-    --chart-1: #FFB085;
-    --chart-2: #F77575;
-    --chart-3: #90AACB;
-    --chart-4: #FFE194;
-    --chart-5: #90C695;
+    --ring: #FF385C;
+    --chart-1: #FF385C;
+    --chart-2: #FF5A5F;
+    --chart-3: #FFB400;
+    --chart-4: #00A699;
+    --chart-5: #FC642D;
     --radius: 0.75rem;
     --sidebar: #FFFFFF;
-    --sidebar-foreground: #2D1810;
-    --sidebar-primary: #FFB085;
+    --sidebar-foreground: #222222;
+    --sidebar-primary: #FF385C;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #FFE194;
-    --sidebar-accent-foreground: #2D1810;
-    --sidebar-border: #E8DCC6;
-    --sidebar-ring: #FFB085;
+    --sidebar-accent: #FF5A5F;
+    --sidebar-accent-foreground: #222222;
+    --sidebar-border: #EBEBEB;
+    --sidebar-ring: #FF385C;
 }
 
 .dark {
-    /* Dark mode with warm undertones */
-    --background: #1A1611;
-    --foreground: #F5F0E8;
-    --card: #2D2520;
-    --card-foreground: #F5F0E8;
-    --popover: #2D2520;
-    --popover-foreground: #F5F0E8;
-    --primary: #FFB085;
-    --primary-foreground: #1A1611;
-    --secondary: #3D3429;
-    --secondary-foreground: #F5F0E8;
-    --muted: #3D3429;
-    --muted-foreground: #A69B87;
-    --accent: #F77575;
+    /* Dark mode with Airbnb-inspired colors */
+    --background: #121212;
+    --foreground: #FFFFFF;
+    --card: #1E1E1E;
+    --card-foreground: #FFFFFF;
+    --popover: #1E1E1E;
+    --popover-foreground: #FFFFFF;
+    --primary: #FF385C;
+    --primary-foreground: #FFFFFF;
+    --secondary: #2D2D2D;
+    --secondary-foreground: #FFFFFF;
+    --muted: #2D2D2D;
+    --muted-foreground: #A1A1A1;
+    --accent: #FF5A5F;
     --accent-foreground: #FFFFFF;
-    --destructive: #EF4444;
+    --destructive: #E53E3E;
     --destructive-foreground: #FFFFFF;
-    --border: #3D3429;
-    --input: #3D3429;
-    --ring: #FFB085;
-    --chart-1: #FFB085;
-    --chart-2: #F77575;
-    --chart-3: #90AACB;
-    --chart-4: #FFE194;
-    --chart-5: #90C695;
-    --sidebar: #2D2520;
-    --sidebar-foreground: #F5F0E8;
-    --sidebar-primary: #FFB085;
-    --sidebar-primary-foreground: #1A1611;
-    --sidebar-accent: #3D3429;
-    --sidebar-accent-foreground: #F5F0E8;
-    --sidebar-border: #3D3429;
-    --sidebar-ring: #FFB085;
+    --border: #2D2D2D;
+    --input: #1E1E1E;
+    --ring: #FF385C;
+    --chart-1: #FF385C;
+    --chart-2: #FF5A5F;
+    --chart-3: #FFB400;
+    --chart-4: #00A699;
+    --chart-5: #FC642D;
+    --sidebar: #1E1E1E;
+    --sidebar-foreground: #FFFFFF;
+    --sidebar-primary: #FF385C;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #FF5A5F;
+    --sidebar-accent-foreground: #FFFFFF;
+    --sidebar-border: #2D2D2D;
+    --sidebar-ring: #FF385C;
 }
 
 @layer base {
@@ -170,48 +159,49 @@
     body {
         @apply bg-background text-foreground;
         font-family: var(--font-sans);
+        font-feature-settings: "kern", "liga", "clig", "calt";
     }
 }
 
-/* Food Delivery App Specific Styles */
+/* Airbnb-Inspired Components */
 @layer components {
     /* Header & Navigation */
     .navbar {
-        @apply bg-white/90 backdrop-blur-sm border-b border-warm-orange/20 sticky top-0 z-50;
+        @apply bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm;
     }
     
     .nav-link {
-        @apply text-foreground hover:text-primary transition-colors duration-200 font-medium;
+        @apply text-gray-900 hover:text-primary transition-colors duration-200 font-medium;
     }
     
     .nav-link.active {
-        @apply text-primary border-b-2 border-primary;
+        @apply text-primary;
     }
 
-    /* Buttons */
+    /* Buttons - Airbnb style */
     .btn-primary {
-        @apply bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl;
+        @apply bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-semibold transition-all duration-200;
     }
     
     .btn-secondary {
-        @apply bg-secondary hover:bg-secondary/90 text-secondary-foreground px-6 py-3 rounded-lg font-semibold transition-all duration-200;
+        @apply bg-white border border-gray-300 hover:border-gray-400 text-gray-900 px-5 py-2.5 rounded-lg font-semibold transition-all duration-200;
     }
     
     .btn-accent {
-        @apply bg-accent hover:bg-accent/90 text-accent-foreground px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl;
+        @apply bg-accent hover:bg-accent/90 text-white px-5 py-2.5 rounded-lg font-semibold transition-all duration-200;
     }
     
     .btn-outline {
-        @apply border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground px-6 py-3 rounded-lg font-semibold transition-all duration-200;
+        @apply border border-primary text-primary hover:bg-primary/10 px-5 py-2.5 rounded-lg font-semibold transition-all duration-200;
     }
 
-    /* Cards */
+    /* Cards - Airbnb style */
     .food-card {
-        @apply bg-card border border-border rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1;
+        @apply bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300;
     }
     
     .restaurant-card {
-        @apply bg-card border border-border rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2;
+        @apply bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300;
     }
     
     .menu-item-card {
@@ -247,9 +237,9 @@
         @apply bg-red-100 text-red-800;
     }
 
-    /* Forms */
+    /* Forms - Airbnb style */
     .form-input {
-        @apply w-full px-4 py-3 border border-border rounded-lg bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all duration-200;
+        @apply w-full px-4 py-2.5 border border-border rounded-lg bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent transition-all duration-200;
     }
     
     .form-label {
@@ -260,39 +250,39 @@
         @apply text-red-500 text-sm mt-1;
     }
 
-    /* Hero Section */
+    /* Hero Section - Airbnb style */
     .hero-section {
-        @apply bg-gradient-to-br from-secondary/20 via-background to-primary/10 py-20;
+        @apply bg-gradient-to-r from-primary/10 via-background to-primary/5 py-16;
     }
     
     .hero-title {
-        @apply text-5xl font-bold text-foreground mb-6 leading-tight;
+        @apply text-4xl md:text-5xl font-bold text-foreground mb-4 leading-tight;
     }
     
     .hero-subtitle {
-        @apply text-xl text-muted-foreground mb-8 leading-relaxed;
+        @apply text-lg text-muted-foreground mb-8 leading-relaxed max-w-2xl;
     }
 
     /* Food Categories */
     .category-item {
-        @apply flex flex-col items-center p-6 bg-card rounded-xl border border-border hover:border-primary/50 transition-all duration-200 cursor-pointer hover:-translate-y-1;
+        @apply flex flex-col items-center p-4 bg-card rounded-lg border border-border hover:border-primary/50 transition-all duration-200 cursor-pointer;
     }
     
     .category-icon {
-        @apply w-16 h-16 mb-4 text-primary;
+        @apply w-12 h-12 mb-3 text-primary;
     }
     
     .category-name {
-        @apply font-semibold text-foreground text-center;
+        @apply font-medium text-foreground text-center;
     }
 
-    /* Search Bar */
+    /* Search Bar - Airbnb style */
     .search-bar {
-        @apply relative w-full max-w-md mx-auto;
+        @apply relative w-full max-w-2xl mx-auto;
     }
     
     .search-input {
-        @apply w-full pl-12 pr-4 py-3 border border-border rounded-full bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent;
+        @apply w-full pl-12 pr-4 py-3 border border-border rounded-full bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent shadow-sm;
     }
     
     .search-icon {
@@ -309,7 +299,7 @@
     }
     
     .cart-total {
-        @apply text-2xl font-bold text-foreground border-t border-border pt-4;
+        @apply text-xl font-bold text-foreground border-t border-border pt-4;
     }
 
     /* Rating */
@@ -323,11 +313,11 @@
 
     /* Loading States */
     .loading-spinner {
-        @apply animate-spin rounded-full h-8 w-8 border-b-2 border-primary;
+        @apply animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent;
     }
     
     .skeleton {
-        @apply animate-pulse bg-muted rounded;
+        @apply animate-pulse bg-gray-200 rounded;
     }
 
     /* Responsive Design */
@@ -341,7 +331,7 @@
 
     /* Animations */
     .fade-in {
-        @apply animate-in fade-in duration-500;
+        @apply animate-in fade-in duration-300;
     }
     
     .slide-up {
@@ -352,48 +342,65 @@
         @apply animate-in zoom-in-95 duration-200;
     }
 
-    /* Utility Classes for Warm Colors */
-    .text-warm-orange {
-        color: var(--color-warm-orange);
+    /* Utility Classes for Airbnb Colors */
+    .text-airbnb-red {
+        color: var(--color-airbnb-red);
     }
     
-    .text-warm-coral {
-        color: var(--color-warm-coral);
+    .text-airbnb-pink {
+        color: var(--color-airbnb-pink);
     }
     
-    .text-warm-yellow {
-        color: var(--color-warm-yellow);
+    .text-airbnb-orange {
+        color: var(--color-airbnb-orange);
     }
     
-    .text-warm-blue {
-        color: var(--color-warm-blue);
+    .text-airbnb-yellow {
+        color: var(--color-airbnb-yellow);
     }
     
-    .bg-warm-orange {
-        background-color: var(--color-warm-orange);
+    .bg-airbnb-red {
+        background-color: var(--color-airbnb-red);
     }
     
-    .bg-warm-coral {
-        background-color: var(--color-warm-coral);
+    .bg-airbnb-pink {
+        background-color: var(--color-airbnb-pink);
     }
     
-    .bg-warm-yellow {
-        background-color: var(--color-warm-yellow);
+    .bg-airbnb-orange {
+        background-color: var(--color-airbnb-orange);
     }
     
-    .bg-warm-blue {
-        background-color: var(--color-warm-blue);
+    .bg-airbnb-yellow {
+        background-color: var(--color-airbnb-yellow);
     }
     
-    .bg-warm-light {
-        background-color: var(--color-warm-light);
+    .border-airbnb-red {
+        border-color: var(--color-airbnb-red);
     }
     
-    .border-warm-orange {
-        border-color: var(--color-warm-orange);
+    .border-airbnb-pink {
+        border-color: var(--color-airbnb-pink);
+    }
+
+    /* Airbnb-specific components */
+    .airbnb-button {
+        @apply bg-gradient-to-r from-airbnb-red to-airbnb-pink text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 hover:opacity-90;
     }
     
-    .border-warm-coral {
-        border-color: var(--color-warm-coral);
+    .airbnb-card {
+        @apply rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300;
+    }
+    
+    .airbnb-section-title {
+        @apply text-2xl font-bold text-foreground mb-6;
+    }
+    
+    .airbnb-tab {
+        @apply px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary border-b-2 border-transparent hover:border-primary transition-all duration-200;
+    }
+    
+    .airbnb-tab.active {
+        @apply text-primary border-primary;
     }
 }

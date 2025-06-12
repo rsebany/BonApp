@@ -1,6 +1,9 @@
 import { Address } from "cluster";
+import { ReactNode } from "react";
 
 export interface Restaurant {
+    phone: string;
+    restaurant_name: ReactNode;
     id: number;
     name: string;
     description: string;

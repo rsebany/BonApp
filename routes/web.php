@@ -62,6 +62,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
+
+    // Admin routes
+    Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
+        // Orders
+        Route::get('/orders/tracking/{id}', [AdminOrderController::class, 'tracking'])->name('orders.tracking');
+        Route::get('/orders/statistics', [AdminOrderController::class, 'statistics'])->name('orders.statistics');
+        Route::get('/orders/history/{id}', [AdminOrderController::class, 'history'])->name('orders.history');
+        Route::get('/orders/export', [AdminOrderController::class, 'export'])->name('orders.export');
+        Route::resource('orders', AdminOrderController::class);
+    });
 });
 
 // Admin routes with role-based middleware
@@ -71,14 +81,27 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
         return Inertia::render('Dashboard/Admin');
     })->name('dashboard');
     
-    // Admin order management
-    Route::resource('orders', AdminOrderController::class)
-        ->only(['index', 'show', 'update'])
-        ->names([
-            'index' => 'orders.index',
-            'show' => 'orders.show', 
-            'update' => 'orders.update',
-        ]);
+    // Admin order management routes
+    Route::resource('orders', AdminOrderController::class)->names([
+        'index' => 'orders.index',
+        'create' => 'orders.create',
+        'store' => 'orders.store',
+        'show' => 'orders.show',
+        'edit' => 'orders.edit',
+        'update' => 'orders.update',
+        'destroy' => 'orders.destroy',
+    ]);
+    
+    // Additional order routes
+    Route::post('orders/bulk-update', [AdminOrderController::class, 'bulkUpdate'])
+        ->name('orders.bulk-update');
+    
+    Route::get('orders/stats', [AdminOrderController::class, 'stats'])
+        ->name('orders.stats');
+
+    Route::get('orders/{order}/tracking', [AdminOrderController::class, 'tracking'])
+    ->name('orders.tracking');
+
 
     Route::resource('restaurants', AdminRestaurantController::class);
     

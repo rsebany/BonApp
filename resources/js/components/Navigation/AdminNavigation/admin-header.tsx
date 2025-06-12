@@ -1,5 +1,4 @@
 import { Bell, Search, Settings, User, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -7,11 +6,11 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { Link } from '@inertiajs/react';
+import { Button, Input } from '@/components/ui';
 
 interface AdminHeaderProps {
     title?: string;

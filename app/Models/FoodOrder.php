@@ -54,7 +54,7 @@ class FoodOrder extends Model
 
     public function orderStatus(): BelongsTo
     {
-        return $this->belongsTo(OrderStatus::class);
+        return $this->belongsTo(OrderStatus::class, 'order_status_id');
     }
 
     public function assignedDriver(): BelongsTo
@@ -89,21 +89,44 @@ class FoodOrder extends Model
 
     public function canBeRated(): bool
     {
-        return $this->orderStatus->status_value === OrderStatus::DELIVERED;
+        return $this->orderStatus->name === OrderStatus::DELIVERED;
     }
 
     public function isDelivered(): bool
     {
-        return $this->orderStatus->status_value === OrderStatus::DELIVERED;
+        return $this->orderStatus->name === OrderStatus::DELIVERED;
     }
 
     public function isCancelled(): bool
     {
-        return $this->orderStatus->status_value === OrderStatus::CANCELLED;
+        return $this->orderStatus->name === OrderStatus::CANCELLED;
     }
 
     public function isPending(): bool
     {
-        return $this->orderStatus->status_value === OrderStatus::PENDING;
+        return $this->orderStatus->name === OrderStatus::PENDING;
+    }
+
+    public function orderStatusHistory()
+    {
+        return $this->hasMany(OrderStatusHistory::class, 'order_id');
+    }
+
+    public function trackingUpdates()
+    {
+        return $this->hasMany(OrderTrackingUpdate::class, 'order_id');
+    }
+
+    protected static function booted()
+    {
+        static::updated(function ($order) {
+            if ($order->isDirty('order_status_id')) {
+                $order->orderStatusHistory()->create([
+                    'status' => $order->orderStatus->name,
+                    'description' => 'Order status updated to ' . $order->orderStatus->name,
+                    'updated_by_id' => auth()->id(),
+                ]);
+            }
+        });
     }
 }

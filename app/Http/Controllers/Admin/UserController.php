@@ -73,7 +73,8 @@ class UserController extends Controller
         return Inertia::render('admin/Users/index', [ 
             'users' => $users->map(fn($user) => [
                 'id' => $user->id,
-                'name' => $user->name,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
                 'email' => $user->email,
                 'role' => $user->role,
                 'email_verified_at' => $user->email_verified_at,
