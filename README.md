@@ -1,87 +1,97 @@
-BonApp  | Laravel + React Starter Kit
-Introduction
-BonApp is a modern food delivery system built with Laravel and React. Whether you're exploring a new city or on a road trip, BonApp helps you discover and order from the best restaurants around you. With a responsive and intuitive interface, users can easily browse menus, track orders, and enjoy meals while on the move.
+# BonApp 🍔 | Laravel + React Starter Kit
 
-This project leverages the power of Laravel for the backend and React 19 on the frontend, all seamlessly connected through Inertia.js. It’s designed for speed, reliability, and developer productivity.
+![BonApp Banner](https://via.placeholder.com/1200x400?text=BonApp+Food+Delivery) <!-- Replace with your actual banner image -->
 
-Features
-🔍 Location-based restaurant search
+BonApp is a modern food delivery system built with Laravel and React. Whether you're exploring a new city or on a road trip, BonApp helps you discover and order from the best restaurants around you.
 
-🍽️ Dynamic restaurant listings and menus
+## ✨ Features
 
-🚚 Real-time order tracking
+- 🔍 Location-based restaurant search
+- 🍽️ Dynamic restaurant listings and menus
+- � Real-time order tracking
+- 💳 Secure payment integration
+- 🧾 Order history and receipts
+- 🌍 Multilingual and mobile-responsive design
 
-💳 Secure payment integration
+## 🛠️ Tech Stack
 
-🧾 Order history and receipts
+**Backend:**
+- Laravel 11+
+- REST API
+- Laravel Sanctum (Authentication)
 
-🌍 Multilingual and mobile-responsive design
+**Frontend:**
+- React 19
+- TypeScript
+- Inertia.js
+- Vite
 
-Tech Stack
-Backend: Laravel 11+
+**UI Components:**
+- Tailwind CSS
+- shadcn/ui
+- Radix UI
 
-Frontend: React 19, TypeScript
+## 🚀 Getting Started
 
-UI: Tailwind CSS, shadcn/ui, Radix UI
+### Prerequisites
+- PHP 8.2+
+- Node.js 18+
+- Composer
+- MySQL/PostgreSQL
+- Laravel CLI
 
-Routing: Inertia.js
+### Installation
 
-Build Tool: Vite
-
-API: REST & Laravel Sanctum for authentication
-
-Getting Started
-Prerequisites
-PHP 8.2+
-
-Node.js 18+
-
-Composer
-
-MySQL or PostgreSQL
-
-Laravel CLI
-
-Installation
-Clone the repository:
-
-bash
-Copy
-Edit
+1. Clone the repository:
 git clone https://github.com/yourusername/bonapp.git
 cd bonapp
-Install dependencies:
 
-bash
-Copy
-Edit
+Install dependencies:
 composer install
 npm install
-Copy the .env file and configure your environment:
+Configure environment:
 
-bash
-Copy
-Edit
 cp .env.example .env
 php artisan key:generate
-Run migrations and seed the database:
+Set up database:
 
-bash
-Copy
-Edit
 php artisan migrate --seed
-Start the development servers:
+Start development servers:
 
-bash
-Copy
-Edit
 npm run dev
 php artisan serve
-Contributing
-Thank you for considering contributing to BonApp! Please review the Laravel Contribution Guide before submitting your pull requests.
+The app will be running at http://localhost:8000
 
-Code of Conduct
-Please review and respect the Laravel Code of Conduct to help us maintain a welcoming community.
+📂 Project Structure
+text
+bonapp/
+├── app/               # Laravel application core
+├── bootstrap/
+├── config/
+├── database/          # Migrations and seeders
+├── public/
+├── resources/
+│   ├── js/            # React components
+│   ├── css/
+│   └── views/
+├── routes/
+├── storage/
+├── tests/
+└── vite.config.js     # Vite configuration
+🤝 Contributing
+We welcome contributions! Please follow these steps:
 
-License
-BonApp is open-source software licensed under the MIT license.
+Fork the project
+Create your feature branch (git checkout -b feature/AmazingFeature)
+Commit your changes (git commit -m 'Add some AmazingFeature')
+Push to the branch (git push origin feature/AmazingFeature)
+
+Open a Pull Request
+Please read our Contribution Guidelines before submitting.
+
+📜 License
+Distributed under the MIT License. See LICENSE for more information.
+
+📬 Contact
+Romualdo SEBANY - romualdosebany.tech@gmail.com
+Project Link: https://github.com/rsebany/bonapp
