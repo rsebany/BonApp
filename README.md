@@ -1,25 +1,87 @@
-# Laravel + React Starter Kit
+BonApp  | Laravel + React Starter Kit
+Introduction
+BonApp is a modern food delivery system built with Laravel and React. Whether you're exploring a new city or on a road trip, BonApp helps you discover and order from the best restaurants around you. With a responsive and intuitive interface, users can easily browse menus, track orders, and enjoy meals while on the move.
 
-## Introduction
+This project leverages the power of Laravel for the backend and React 19 on the frontend, all seamlessly connected through Inertia.js. It’s designed for speed, reliability, and developer productivity.
 
-Our React starter kit provides a robust, modern starting point for building Laravel applications with a React frontend using [Inertia](https://inertiajs.com).
+Features
+🔍 Location-based restaurant search
 
-Inertia allows you to build modern, single-page React applications using classic server-side routing and controllers. This lets you enjoy the frontend power of React combined with the incredible backend productivity of Laravel and lightning-fast Vite compilation.
+🍽️ Dynamic restaurant listings and menus
 
-This React starter kit utilizes React 19, TypeScript, Tailwind, and the [shadcn/ui](https://ui.shadcn.com) and [radix-ui](https://www.radix-ui.com) component libraries.
+🚚 Real-time order tracking
 
-## Official Documentation
+💳 Secure payment integration
 
-Documentation for all Laravel starter kits can be found on the [Laravel website](https://laravel.com/docs/starter-kits).
+🧾 Order history and receipts
 
-## Contributing
+🌍 Multilingual and mobile-responsive design
 
-Thank you for considering contributing to our starter kit! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Tech Stack
+Backend: Laravel 11+
 
-## Code of Conduct
+Frontend: React 19, TypeScript
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+UI: Tailwind CSS, shadcn/ui, Radix UI
 
-## License
+Routing: Inertia.js
 
-The Laravel + React starter kit is open-sourced software licensed under the MIT license.
+Build Tool: Vite
+
+API: REST & Laravel Sanctum for authentication
+
+Getting Started
+Prerequisites
+PHP 8.2+
+
+Node.js 18+
+
+Composer
+
+MySQL or PostgreSQL
+
+Laravel CLI
+
+Installation
+Clone the repository:
+
+bash
+Copy
+Edit
+git clone https://github.com/yourusername/bonapp.git
+cd bonapp
+Install dependencies:
+
+bash
+Copy
+Edit
+composer install
+npm install
+Copy the .env file and configure your environment:
+
+bash
+Copy
+Edit
+cp .env.example .env
+php artisan key:generate
+Run migrations and seed the database:
+
+bash
+Copy
+Edit
+php artisan migrate --seed
+Start the development servers:
+
+bash
+Copy
+Edit
+npm run dev
+php artisan serve
+Contributing
+Thank you for considering contributing to BonApp! Please review the Laravel Contribution Guide before submitting your pull requests.
+
+Code of Conduct
+Please review and respect the Laravel Code of Conduct to help us maintain a welcoming community.
+
+License
+BonApp is open-source software licensed under the MIT license.
