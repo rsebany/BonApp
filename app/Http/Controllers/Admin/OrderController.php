@@ -83,7 +83,7 @@ class OrderController extends Controller
         ]);
     }
 
-        public function show($id)
+        public function show($id, Request $request)
         {
             // Ensure user is admin
             if (auth()->user()->role !== 'admin') {
@@ -91,16 +91,16 @@ class OrderController extends Controller
             }
 
             $order = FoodOrder::with([
-            'customer:id,first_name,last_name,email,phone',
-            'restaurant:id,restaurant_name',
-            'restaurant.address:id,address_line1,address_line2,city,region,postal_code',
-            'restaurant.address.country:id,country_name',
-            'orderStatus:id,name as status', // Make sure this matches your relationship method name
-            'assignedDriver:id,first_name,last_name,phone',
-            'customerAddress:id,address_line1,address_line2,city,region,postal_code',
-            'customerAddress.country:id,country_name',
-            'orderItems.menuItem:id,item_name,price'
-        ])->findOrFail($id);
+                'customer:id,first_name,last_name,email,phone',
+                'restaurant:id,restaurant_name',
+                'restaurant.address:id,address_line1,address_line2,city,region,postal_code',
+                'restaurant.address.country:id,country_name',
+                'orderStatus:id,name as status',
+                'assignedDriver:id,first_name,last_name,phone',
+                'customerAddress:id,address_line1,address_line2,city,region,postal_code',
+                'customerAddress.country:id,country_name',
+                'orderItems.menuItem:id,item_name,price'
+            ])->findOrFail($id);
 
             // Get available drivers for assignment
             $availableDrivers = User::select('id', 'first_name', 'last_name')
@@ -114,10 +114,14 @@ class OrderController extends Controller
             // Get all order statuses
             $orderStatuses = OrderStatus::select('id', 'name as status')->get();
 
+            // Get the filters from the request (passed from index)
+            $filters = $request->only(['status', 'restaurant', 'date_from', 'date_to', 'search', 'sort', 'direction']);
+
             return Inertia::render('admin/Orders/show', [
                 'order' => new OrderResource($order),
                 'availableDrivers' => $availableDrivers,
                 'orderStatuses' => $orderStatuses,
+                'filters' => $filters, // Pass along the filters
             ]);
         }
 
@@ -140,13 +144,6 @@ class OrderController extends Controller
             ->orderBy('restaurant_name')
             ->get();
 
-        $menuItems = MenuItem::select('id', 'restaurant_id', 'item_name', 'price')
-        ->with(['restaurant' => function($query) {
-            $query->select('id', 'restaurant_name');
-        }])
-        ->orderBy('item_name')
-        ->get();
-
         $orderStatuses = OrderStatus::select('id', 'name as status')->get();
 
         $drivers = User::select('id', 'first_name', 'last_name')
@@ -157,7 +154,6 @@ class OrderController extends Controller
         return Inertia::render('admin/Orders/create', [
             'customers' => $customers,
             'restaurants' => $restaurants,
-            'menuItems' => $menuItems, 
             'orderStatuses' => $orderStatuses,
             'drivers' => $drivers,
         ]);

@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMenuItemRequest;
 use App\Http\Requests\UpdateMenuItemRequest;
+use App\Http\Resources\MenuItemResource;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Models\MenuItem;
 use App\Models\Restaurant;
 use App\Services\MenuItemService;
+use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
 class MenuItemController extends Controller
@@ -91,5 +94,29 @@ class MenuItemController extends Controller
         
         return redirect()->route('restaurants.menu-items.index', $restaurant)
             ->with('success', 'Menu item supprimé avec succès');
+    }
+
+   public function getMenuItems(Request $request)
+    {
+        // Validate input
+        $validator = Validator::make($request->all(), [
+            'restaurant_id' => 'required|integer|exists:restaurants,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => $validator->errors()->first()
+            ], 400);
+        }
+
+        // Get menu items
+        $menuItems = MenuItem::where('restaurant_id', $request->restaurant_id)
+            ->select(['id', 'item_name', 'price', 'description', 'restaurant_id'])
+            ->orderBy('item_name')
+            ->get();
+
+        return response()->json([
+            'data' => MenuItemResource::collection($menuItems)
+        ]);
     }
 }

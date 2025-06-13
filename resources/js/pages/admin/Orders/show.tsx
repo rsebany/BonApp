@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState} from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/layouts/Admin/AdminLayout';
 import { ArrowLeft, MapPin, Phone, Mail, Clock, Truck, CheckCircle } from 'lucide-react';
@@ -13,7 +13,6 @@ interface Order {
   id: number;
   customer: {
     id: number;
-    name: string;
     first_name: string;
     last_name: string;
     email: string;
@@ -21,7 +20,6 @@ interface Order {
   };
   restaurant: {
     id: number;
-    name: string;
     restaurant_name: string;
     address?: {
       id: number;
@@ -32,23 +30,22 @@ interface Order {
       postal_code: string;
       country?: {
         id: number;
-        name: string;
+        country_name: string;
       };
     };
   };
-  order_status: {
+  orderStatus: {
     id: number;
     status: string;
     name: string;
   };
-  assigned_driver?: {
+  assignedDriver?: {
     id: number;
-    name: string;
     first_name: string;
     last_name: string;
     phone?: string;
   };
-  customer_address: {
+  customerAddress: {
     id: number;
     address_line1: string;
     address_line2?: string;
@@ -57,27 +54,25 @@ interface Order {
     postal_code: string;
     country?: {
       id: number;
-      name: string;
+      country_name: string;
     };
   };
-  order_items?: Array<{
+  orderItems?: Array<{
     id: number;
     quantity: number;
-    menu_item: {
+    menuItem: {
       id: number;
-      name: string;
+      item_name: string;
       price: string;
     };
   }>;
   total_amount: string;
   delivery_fee: string;
-  order_datetime: string;
-  requested_delivery_datetime?: string;
   created_at: string;
   updated_at: string;
-  formatted_total: string;
-  formatted_delivery_fee: string;
-  formatted_subtotal: string;
+  formatted_total?: string;
+  formatted_delivery_fee?: string;
+  formatted_subtotal?: string;
   customer_driver_rating?: number;
   customer_restaurant_rating?: number;
 }
@@ -101,10 +96,10 @@ interface PageProps {
 
 export default function OrderShow({ order, availableDrivers, orderStatuses }: PageProps) {
   const [selectedDriver, setSelectedDriver] = useState<string>(
-    order.assigned_driver?.id?.toString() || ''
+    order.assignedDriver?.id?.toString() || ''
   );
   const [selectedStatus, setSelectedStatus] = useState<string>(
-    order.order_status?.id?.toString() || ''
+    order.orderStatus?.id?.toString() || ''
   );
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -131,8 +126,16 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
     });
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const formatAddress = (address: any) => {
+  const formatAddress = (address?: {
+    address_line1?: string;
+    address_line2?: string;
+    city?: string;
+    region?: string;
+    postal_code?: string;
+    country?: {
+      country_name?: string;
+    };
+  }) => {
     if (!address) return 'No address available';
     
     const parts = [
@@ -141,54 +144,51 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
       address.city,
       address.region,
       address.postal_code,
-      address.country?.name
+      address.country?.country_name
     ].filter(Boolean);
-    return parts.join(', ');
+    
+    return parts.length > 0 ? parts.join(', ') : 'Address not specified';
   };
-  
+
+  const calculateSubtotal = () => {
+    if (!order.orderItems) return 0;
+    return order.orderItems.reduce((sum, item) => {
+      return sum + (parseFloat(item.menuItem.price) * item.quantity);
+    }, 0);
+  };
+
+  const formatCurrency = (amount: string | number) => {
+    const value = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(value);
+  };
+
+  const subtotal = calculateSubtotal();
+  const deliveryFee = parseFloat(order.delivery_fee || '0');
+  const total = subtotal + deliveryFee;
+
   return (
-    <AdminLayout title="Orders Management">
+    <AdminLayout title="Order Details">
       <Head title={`Order #${order.id}`} />
       
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" asChild>
-              <Link href={route('admin.orders.index')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Orders
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 py-2">Order #{order.id}</h1>
-              <p className="text-gray-600">
-                Placed on {new Date(order.created_at).toLocaleDateString()} at{' '}
-                {new Date(order.created_at).toLocaleTimeString()}
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 py-2">Order #{order.id}</h1>
+            <p className="text-gray-600">
+              Placed on {new Date(order.created_at).toLocaleDateString()} at{' '}
+              {new Date(order.created_at).toLocaleTimeString()}
+            </p>
           </div>
-           {/*
-          <div className="flex gap-3">
-            <Button variant="outline" asChild>
-             <Link href={route('admin.orders.tracking', { order: order.id })}>
-                <MapPin className="h-4 w-4 mr-2" />
-                Track Order
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href={route('admin.orders.history', { order: order.id })}>
-                <Clock className="h-4 w-4 mr-2" />
-                View History
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href={route('admin.orders.edit', { order: order.id })}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Order
-              </Link>
-            </Button>
-          </div>*/}
+          <Button variant="outline" size="sm" asChild>
+            <Link href={route('admin.orders.index')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Orders
+            </Link>
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -199,8 +199,8 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>Order Status & Assignment</span>
-                  <Badge className={getStatusColor(order.order_status?.status || 'pending')}>
-                    {order.order_status?.status || 'Unknown'}
+                  <Badge className={getStatusColor(order.orderStatus?.name || 'pending')}>
+                    {order.orderStatus?.name || 'Unknown'}
                   </Badge>
                 </CardTitle>
               </CardHeader>
@@ -228,9 +228,7 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
                                 selectedStatus === status.id.toString() && 'bg-gray-100',
                                 'justify-start text-left text-sm w-full'
                               )}
-                              onClick={() => {
-                                setSelectedStatus(status.id.toString());
-                              }}
+                              onClick={() => setSelectedStatus(status.id.toString())}
                             >
                               {status.status}
                             </Button>
@@ -248,7 +246,8 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
                       <PopoverTrigger asChild>
                         <Button variant="outline" size="sm" className="w-full justify-between">
                           {selectedDriver 
-                            ? availableDrivers.find(d => d.id.toString() === selectedDriver)?.first_name + ' ' + availableDrivers.find(d => d.id.toString() === selectedDriver)?.last_name
+                            ? availableDrivers.find(d => d.id.toString() === selectedDriver)?.first_name + ' ' + 
+                              availableDrivers.find(d => d.id.toString() === selectedDriver)?.last_name
                             : 'Unassigned'
                           }
                           <ChevronsUpDown className="ml-auto h-4 w-4" />
@@ -263,9 +262,7 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
                               selectedDriver === '' && 'bg-gray-100',
                               'justify-start text-left text-sm w-full'
                             )}
-                            onClick={() => {
-                              setSelectedDriver('');
-                            }}
+                            onClick={() => setSelectedDriver('')}
                           >
                             Unassigned
                           </Button>
@@ -278,9 +275,7 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
                                 selectedDriver === driver.id.toString() && 'bg-gray-100',
                                 'justify-start text-left text-sm w-full'
                               )}
-                              onClick={() => {
-                                setSelectedDriver(driver.id.toString());
-                              }}
+                              onClick={() => setSelectedDriver(driver.id.toString())}
                             >
                               {driver.first_name} {driver.last_name}
                             </Button>
@@ -310,19 +305,19 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {order.order_items && order.order_items.length > 0 ? (
+                {order.orderItems && order.orderItems.length > 0 ? (
                   <div className="space-y-3">
-                    {order.order_items.map((item) => (
+                    {order.orderItems.map((item) => (
                       <div key={item.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
                         <div className="flex-1">
-                          <h4 className="font-medium">{item.menu_item.name}</h4>
+                          <h4 className="font-medium">{item.menuItem.item_name}</h4>
                           <p className="text-sm text-gray-600">
-                            ${item.menu_item.price} × {item.quantity}
+                            {formatCurrency(item.menuItem.price)} × {item.quantity}
                           </p>
                         </div>
                         <div className="text-right">
                           <p className="font-medium">
-                            ${(parseFloat(item.menu_item.price) * item.quantity).toFixed(2)}
+                            {formatCurrency(parseFloat(item.menuItem.price) * item.quantity)}
                           </p>
                         </div>
                       </div>
@@ -347,7 +342,9 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-gray-500" />
-                      <span className="font-medium">{order.customer?.name || 'Unknown Customer'}</span>
+                      <span className="font-medium">
+                        {order.customer?.first_name} {order.customer?.last_name}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-gray-500" />
@@ -367,7 +364,7 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
                       <div>
                         <p className="font-medium text-sm mb-1">Delivery Address</p>
                         <p className="text-gray-600 text-sm">
-                          {order.customer_address ? formatAddress(order.customer_address) : 'No address available'}
+                          {order.customerAddress ? formatAddress(order.customerAddress) : 'No address available'}
                         </p>
                       </div>
                     </div>
@@ -376,10 +373,13 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
               </CardContent>
             </Card>
 
-            {/* Restaurant Information 
+            {/* Restaurant Information */}
             <Card>
               <CardHeader>
-                <CardTitle>Restaurant Information</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  Restaurant Information
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -387,22 +387,20 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
                     <h4 className="font-medium">{order.restaurant?.restaurant_name || 'Unknown Restaurant'}</h4>
                   </div>
                   
-                  {order.restaurant.address && (
-                    <div>
-                      <div className="flex items-start gap-2">
-                        <MapPin className="h-4 w-4 text-gray-500 mt-1" />
-                        <div>
-                          <p className="font-medium text-sm mb-1">Restaurant Address</p>
-                          <p className="text-gray-600 text-sm">
-                            {order.restaurant?.address ? formatAddress(order.restaurant.address) : 'No address available'}
-                          </p>
-                        </div>
+                  <div>
+                    <div className="flex items-start gap-2">
+                      <MapPin className="h-4 w-4 text-gray-500 mt-1" />
+                      <div>
+                        <p className="font-medium text-sm mb-1">Restaurant Address</p>
+                        <p className="text-gray-600 text-sm">
+                          {order.restaurant?.address ? formatAddress(order.restaurant.address) : 'No address available'}
+                        </p>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               </CardContent>
-            </Card>*/}
+            </Card>
           </div>
 
           {/* Sidebar */}
@@ -418,23 +416,23 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>{order.formatted_subtotal}</span>
+                  <span>{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Delivery Fee</span>
-                  <span>{order.formatted_delivery_fee}</span>
+                  <span>{formatCurrency(deliveryFee)}</span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span>{order.formatted_total}</span>
+                    <span>{formatCurrency(total)}</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Driver Information */}
-            {order.assigned_driver && (
+            {order.assignedDriver && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -445,12 +443,14 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
                 <CardContent className="space-y-2">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">{order.assigned_driver.name}</span>
+                    <span className="font-medium">
+                      {order.assignedDriver.first_name} {order.assignedDriver.last_name}
+                    </span>
                   </div>
-                  {order.assigned_driver.phone && (
+                  {order.assignedDriver.phone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-gray-500" />
-                      <span className="text-gray-600">{order.assigned_driver.phone}</span>
+                      <span className="text-gray-600">{order.assignedDriver.phone}</span>
                     </div>
                   )}
                 </CardContent>
@@ -471,18 +471,6 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
                     <span className="text-gray-600">Order Placed</span>
                     <span>{new Date(order.created_at).toLocaleString()}</span>
                   </div>
-                  {order.order_datetime !== order.created_at && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Order Date</span>
-                      <span>{new Date(order.order_datetime).toLocaleString()}</span>
-                    </div>
-                  )}
-                  {order.requested_delivery_datetime && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Requested Delivery</span>
-                      <span>{new Date(order.requested_delivery_datetime).toLocaleString()}</span>
-                    </div>
-                  )}
                   <div className="flex justify-between">
                     <span className="text-gray-600">Last Updated</span>
                     <span>{new Date(order.updated_at).toLocaleString()}</span>

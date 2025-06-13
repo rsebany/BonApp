@@ -1,7 +1,6 @@
 import { Address } from "cluster";
 import { GeoLocation } from "./user";
 
-// resources/js/types/order.ts
 export interface Order {
     id: number;
     customer_id: number;

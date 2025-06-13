@@ -1,4 +1,3 @@
-// types/forms.ts
 export interface CreateRestaurantForm {
   name: string;
   description: string;

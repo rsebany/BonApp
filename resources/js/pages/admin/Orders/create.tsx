@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import axios from 'axios';
+
 
 interface OrderPayload {
   [key: string]: string | number | null | Array<{
@@ -94,27 +96,38 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
     items: [],
   });
 
+  
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
+  const [loadingMenuItems, setLoadingMenuItems] = useState(false);
   const [customerAddresses, setCustomerAddresses] = useState<Address[]>([]);
-
-  // Filter menu items based on selected restaurant
-  const filteredMenuItems = formData.restaurant_id 
-    ? menuItems.filter(item => item.restaurant_id === Number(formData.restaurant_id))
-    : [];
 
   // Fetch menu items when restaurant changes
   useEffect(() => {
     if (formData.restaurant_id) {
-      // In a real app, you might want to fetch menu items from the server here
-      // For now, we're using the initial props data
-      const restaurantMenuItems = restaurants.find(r => r.id === Number(formData.restaurant_id))?.menu_items || [];
-      setMenuItems(restaurantMenuItems);
+        console.log('Selected restaurant ID:', formData.restaurant_id);
+        setLoadingMenuItems(true);
+        setMenuItems([]);
+        
+        // Simple API call since headers are set globally
+        axios.get(`/admin/api/menu-items?restaurant_id=${formData.restaurant_id}`)
+            .then(response => {
+                console.log('Menu items response:', response.data);
+                setMenuItems(response.data.data || response.data);
+                setLoadingMenuItems(false);
+            })
+            .catch(error => {
+                console.error('Error fetching menu items:', error);
+                console.error('Error details:', error.response?.data);
+                setMenuItems([]);
+                setLoadingMenuItems(false);
+            });
     } else {
-      setMenuItems([]);
+        setMenuItems([]);
+        setLoadingMenuItems(false);
     }
-  }, [formData.restaurant_id, restaurants]);
+}, [formData.restaurant_id]);
 
   // Update customer addresses when customer changes
   useEffect(() => {
@@ -156,6 +169,7 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
     setFormData(prev => ({
       ...prev,
       [field]: value,
+      ...(field === 'restaurant_id' && { items: [] })
     }));
   };
 
@@ -200,6 +214,7 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
       };
     });
   };
+
 
   return (
     <AdminLayout title="Orders Management">
@@ -334,24 +349,36 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
                       <select
                         value={item.menu_item_id}
                         onChange={(e) => {
-                          const menuItem = filteredMenuItems.find(
-                            mi => mi.id === Number(e.target.value)
-                          );
+                          const selectedItem = menuItems.find(mi => mi.id === Number(e.target.value));
                           handleItemChange(index, 'menu_item_id', e.target.value);
-                          if (menuItem) {
-                            handleItemChange(index, 'price', menuItem.price);
+                          if (selectedItem) {
+                            handleItemChange(index, 'price', selectedItem.price);
                           }
                         }}
                         className="w-full rounded-md border border-gray-300 px-3 py-2"
-                        disabled={!formData.restaurant_id}
+                        disabled={!formData.restaurant_id || loadingMenuItems}
                       >
-                        <option value="">Select an item</option>
-                        {filteredMenuItems.map(menuItem => (
+                        <option value="">
+                          {loadingMenuItems ? "Loading..." : "Select an item"}
+                        </option>
+                        {menuItems.map(menuItem => (
                           <option key={menuItem.id} value={menuItem.id}>
-                            {menuItem.item_name} - ${menuItem.price}
+                            {menuItem.item_name} - ${Number(menuItem.price).toFixed(2)}
                           </option>
                         ))}
                       </select>
+                      
+                      {formData.restaurant_id && (
+                        <div className="mt-2 text-sm">
+                          {loadingMenuItems ? (
+                            <span className="text-blue-600">Loading menu items...</span>
+                          ) : menuItems.length === 0 ? (
+                            <span className="text-amber-600">No menu items available for this restaurant</span>
+                          ) : (
+                            <span className="text-green-600">{menuItems.length} items available</span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="w-24 space-y-2">
@@ -447,6 +474,7 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
               </Button>
             </CardContent>
           </Card>
+          
         </form>
       </div>
     </AdminLayout>

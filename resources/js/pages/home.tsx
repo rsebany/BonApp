@@ -23,7 +23,6 @@ export default function Home() {
     };
     window.addEventListener('scroll', handleScroll);
     
-    // Simulate loading
     const timer = setTimeout(() => setLoading(false), 1500);
     
     return () => {
@@ -147,7 +146,7 @@ export default function Home() {
   const categories = ['All', ...Array.from(new Set(allRestaurants.map(r => r.category)))];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#EBEBEB]">
       <Head title="Discover Local Restaurants | TasteVoyage" />
       
       {/* Sticky Header */}
@@ -155,15 +154,23 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <Link href="/" className="flex items-center">
-              <span className="text-2xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">
-                TasteVoyage
+              <span className="text-2xl font-bold bg-gradient-to-r from-[#FF385C] to-[#FF5A5F] bg-clip-text text-transparent">
+                BonApp
               </span>
             </Link>
             
             <div className="hidden md:flex items-center gap-4">
-              <Button variant="ghost" className="font-medium">Become a Partner</Button>
-              <Button variant="ghost" className="font-medium">Sign In</Button>
-              <Button className="bg-amber-500 hover:bg-amber-600">Sign Up</Button>
+              <Button variant="ghost" className="font-medium text-[#222222]">Become a Partner</Button>
+                <Link href={route('login')}>
+                <Button variant="ghost" className="font-medium text-[#222222]">
+                  Sign In
+                </Button>
+              </Link>
+              <Link href={route('register')}>
+                <Button className="bg-[#FF385C] hover:bg-[#FF5A5F] text-white">
+                  Sign Up
+                </Button>
+              </Link>
             </div>
             
             <Button className="md:hidden" size="icon" variant="ghost">
@@ -178,13 +185,13 @@ export default function Home() {
       </header>
       
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-b from-amber-50 to-white py-16 px-4 sm:px-6 lg:px-8">
+      <div className="relative bg-gradient-to-b from-white to-[#EBEBEB] py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-[#222222]">
               Savor the flavors of your city
             </h1>
-            <p className="text-xl mb-8 max-w-2xl mx-auto text-gray-600">
+            <p className="text-xl mb-8 max-w-2xl mx-auto text-[#717171]">
               Discover hidden culinary gems and have them delivered to your door in minutes.
             </p>
           </div>
@@ -197,23 +204,23 @@ export default function Home() {
                   <Input 
                     type="text" 
                     placeholder="Search by restaurant, cuisine, or dish..." 
-                    className="pl-12 pr-4 py-6 rounded-none border-none text-gray-900 focus-visible:ring-0 text-lg"
+                    className="pl-12 pr-4 py-6 rounded-none border-none text-[#222222] focus-visible:ring-0 text-lg"
                   />
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" />
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#717171]" />
                 </div>
-                <Button className="rounded-none bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-8 py-6 text-white font-medium">
+                <Button className="rounded-none bg-gradient-to-r from-[#FF385C] to-[#FF5A5F] hover:from-[#FF5A5F] hover:to-[#FF385C] px-8 py-6 text-white font-medium">
                   <MapPin className="mr-2 h-5 w-5" /> Show map
                 </Button>
               </div>
             </div>
             
             <div className="flex flex-wrap justify-center gap-2 mt-4">
-              <span className="text-sm text-gray-600">Trending now: </span>
+              <span className="text-sm text-[#717171]">Trending now: </span>
               {['Pizza', 'Burgers', 'Sushi', 'Tacos', 'Pasta'].map((item) => (
                 <Button 
                   key={item} 
                   variant="ghost" 
-                  className="text-gray-700 hover:bg-amber-50 hover:text-amber-600 text-sm h-8 px-3 rounded-full border"
+                  className="text-[#222222] hover:bg-[#FF385C]/10 hover:text-[#FF385C] text-sm h-8 px-3 rounded-full border"
                 >
                   {item}
                 </Button>
@@ -232,7 +239,7 @@ export default function Home() {
               <Button
                 key={category}
                 variant={activeCategory === category ? 'default' : 'outline'}
-                className={`whitespace-nowrap rounded-full ${activeCategory === category ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
+                className={`whitespace-nowrap rounded-full ${activeCategory === category ? 'bg-[#FF385C] hover:bg-[#FF5A5F]' : ''}`}
                 onClick={() => setActiveCategory(category)}
               >
                 {category}
@@ -244,8 +251,8 @@ export default function Home() {
         {/* Restaurants Grid */}
         <section className="mb-16">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Dining experiences nearby</h2>
-            <Link href="/restaurants" className="flex items-center text-amber-600 hover:underline font-medium">
+            <h2 className="text-2xl font-bold text-[#222222]">Dining experiences nearby</h2>
+            <Link href="/restaurants" className="flex items-center text-[#FF385C] hover:underline font-medium">
               View all <ChevronRight className="w-4 h-4 ml-1" />
             </Link>
           </div>
@@ -264,7 +271,7 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {filteredRestaurants.map((restaurant) => (
                 <div key={restaurant.id} className="group">
-                  <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col border border-gray-200">
+                  <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col border border-[#EBEBEB]">
                     <div className="relative">
                       <div 
                         className="aspect-video bg-cover bg-center group-hover:scale-105 transition-transform duration-300" 
@@ -273,17 +280,17 @@ export default function Home() {
                       <Button 
                         size="icon" 
                         variant="ghost" 
-                        className={`absolute top-2 right-2 rounded-full ${savedRestaurants.includes(restaurant.id) ? 'bg-rose-100 hover:bg-rose-200' : 'bg-white/90 hover:bg-white'}`}
+                        className={`absolute top-2 right-2 rounded-full ${savedRestaurants.includes(restaurant.id) ? 'bg-[#FF385C]/10 hover:bg-[#FF385C]/20' : 'bg-white/90 hover:bg-white'}`}
                         onClick={() => toggleSaved(restaurant.id)}
                       >
                         <Heart 
-                          className={`w-5 h-5 ${savedRestaurants.includes(restaurant.id) ? 'fill-rose-500 text-rose-500' : 'text-gray-700'}`} 
+                          className={`w-5 h-5 ${savedRestaurants.includes(restaurant.id) ? 'fill-[#FF385C] text-[#FF385C]' : 'text-[#717171]'}`} 
                         />
                       </Button>
                       {restaurant.name && (
                         <div className="absolute bottom-2 left-2">
-                          <Badge className="flex items-center bg-white text-gray-900 hover:bg-white shadow-sm">
-                            <Award className="w-4 h-4 mr-1 text-amber-500" />
+                          <Badge className="flex items-center bg-white text-[#222222] hover:bg-white shadow-sm">
+                            <Award className="w-4 h-4 mr-1 text-[#FFB400]" />
                             Top Rated
                           </Badge>
                         </div>
@@ -291,15 +298,15 @@ export default function Home() {
                     </div>
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-start">
-                        <CardTitle className="group-hover:text-amber-600 transition-colors text-lg">
+                        <CardTitle className="group-hover:text-[#FF385C] transition-colors text-lg">
                           {restaurant.name}
                         </CardTitle>
-                        <div className="flex items-center bg-gray-100 px-2 py-1 rounded-md">
-                          <Star className="w-4 h-4 fill-amber-500 text-amber-500 mr-1" />
+                        <div className="flex items-center bg-[#EBEBEB] px-2 py-1 rounded-md">
+                          <Star className="w-4 h-4 fill-[#FFB400] text-[#FFB400] mr-1" />
                           <span className="text-sm font-medium">{restaurant.rating}</span>
                         </div>
                       </div>
-                      <CardDescription className="flex justify-between text-gray-600">
+                      <CardDescription className="flex justify-between text-[#717171]">
                         <span>{restaurant.cuisine}</span>
                         <span>•</span>
                         <span>{restaurant.distance}</span>
@@ -308,13 +315,13 @@ export default function Home() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="pb-4 pt-0">
-                      <p className="text-sm text-gray-600">{restaurant.featuredDish}</p>
+                      <p className="text-sm text-[#717171]">{restaurant.featuredDish}</p>
                       <div className="flex flex-wrap gap-2 mt-3">
                         {restaurant.tags.map((tag) => (
                           <Badge 
                             key={tag} 
                             variant="outline" 
-                            className="text-xs bg-gray-50 border-gray-200"
+                            className="text-xs bg-[#EBEBEB] border-[#EBEBEB]"
                           >
                             {tag}
                           </Badge>
@@ -322,14 +329,14 @@ export default function Home() {
                       </div>
                     </CardContent>
                     <CardFooter className="mt-auto pt-0 flex items-center justify-between border-t px-6 py-4">
-                      <div className="flex items-center text-gray-600">
+                      <div className="flex items-center text-[#717171]">
                         <Clock className="w-4 h-4 mr-1" />
                         <span className="text-sm">{restaurant.deliveryTime}</span>
                       </div>
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="border-amber-300 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                        className="border-[#FF385C]/30 text-[#FF385C] hover:bg-[#FF385C]/10 hover:text-[#FF385C]"
                       >
                         Order now
                       </Button>
@@ -344,8 +351,8 @@ export default function Home() {
         {/* Categories Section */}
         <section className="mb-16">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Explore by category</h2>
-            <Link href="/categories" className="flex items-center text-amber-600 hover:underline font-medium">
+            <h2 className="text-2xl font-bold text-[#222222]">Explore by category</h2>
+            <Link href="/categories" className="flex items-center text-[#FF385C] hover:underline font-medium">
               View all <ChevronRight className="w-4 h-4 ml-1" />
             </Link>
           </div>
@@ -376,10 +383,10 @@ export default function Home() {
         <section className="mb-16">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Local favorites</h2>
-              <p className="text-gray-600">Highly rated by people in your area</p>
+              <h2 className="text-2xl font-bold text-[#222222]">Local favorites</h2>
+              <p className="text-[#717171]">Highly rated by people in your area</p>
             </div>
-            <Link href="/local-favorites" className="flex items-center text-amber-600 hover:underline font-medium">
+            <Link href="/local-favorites" className="flex items-center text-[#FF385C] hover:underline font-medium">
               View all <ChevronRight className="w-4 h-4 ml-1" />
             </Link>
           </div>
@@ -388,7 +395,7 @@ export default function Home() {
             <CarouselContent>
               {localFavorites.map((restaurant) => (
                 <CarouselItem key={restaurant.id} className="sm:basis-1/2">
-                  <Card className="h-full flex flex-col sm:flex-row border border-gray-200 overflow-hidden group hover:shadow-lg transition-shadow">
+                  <Card className="h-full flex flex-col sm:flex-row border border-[#EBEBEB] overflow-hidden group hover:shadow-lg transition-shadow">
                     <div className="sm:w-1/3 relative min-h-[200px] sm:min-h-0">
                       <div 
                         className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-500" 
@@ -398,35 +405,35 @@ export default function Home() {
                     </div>
                     <div className="sm:w-2/3 p-6">
                       <div className="flex justify-between items-start mb-2">
-                        <CardTitle className="text-xl group-hover:text-amber-600 transition-colors">
+                        <CardTitle className="text-xl group-hover:text-[#FF385C] transition-colors">
                           {restaurant.name}
                         </CardTitle>
-                        <div className="flex items-center bg-gray-100 px-2 py-1 rounded-md">
-                          <Star className="w-4 h-4 fill-amber-500 text-amber-500 mr-1" />
+                        <div className="flex items-center bg-[#EBEBEB] px-2 py-1 rounded-md">
+                          <Star className="w-4 h-4 fill-[#FFB400] text-[#FFB400] mr-1" />
                           <span>{restaurant.rating}</span>
                         </div>
                       </div>
-                      <CardDescription className="mb-4">
+                      <CardDescription className="mb-4 text-[#717171]">
                         {restaurant.cuisine} • {restaurant.distance} • {restaurant.priceRange}
                       </CardDescription>
-                      <p className="text-gray-700 mb-4">{restaurant.featuredDish}</p>
+                      <p className="text-[#222222] mb-4">{restaurant.featuredDish}</p>
                       <div className="flex flex-wrap gap-2 mb-4">
                         {restaurant.tags.map((tag) => (
                           <Badge 
                             key={tag} 
                             variant="outline" 
-                            className="text-xs bg-gray-50 border-gray-200"
+                            className="text-xs bg-[#EBEBEB] border-[#EBEBEB]"
                           >
                             {tag}
                           </Badge>
                         ))}
                       </div>
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center text-gray-600">
+                        <div className="flex items-center text-[#717171]">
                           <Clock className="w-4 h-4 mr-1" />
                           <span className="text-sm">{restaurant.deliveryTime}</span>
                         </div>
-                        <Button size="sm" className="bg-amber-500 hover:bg-amber-600">
+                        <Button size="sm" className="bg-[#FF385C] hover:bg-[#FF5A5F]">
                           View menu <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                       </div>
@@ -435,41 +442,41 @@ export default function Home() {
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious className="left-2 bg-white border-gray-300 hover:bg-gray-50" />
-            <CarouselNext className="right-2 bg-white border-gray-300 hover:bg-gray-50" />
+            <CarouselPrevious className="left-2 bg-white border-[#EBEBEB] hover:bg-[#EBEBEB]" />
+            <CarouselNext className="right-2 bg-white border-[#EBEBEB] hover:bg-[#EBEBEB]" />
           </Carousel>
         </section>
         
         {/* How It Works */}
         <section className="mb-16">
-          <h2 className="text-2xl font-bold mb-8 text-center text-gray-900">How TasteVoyage works</h2>
+          <h2 className="text-2xl font-bold mb-8 text-center text-[#222222]">How TasteVoyage works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-6 hover:bg-amber-50 rounded-xl transition-colors">
-              <div className="bg-amber-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MapPin className="w-8 h-8 text-amber-600" />
+            <div className="text-center p-6 hover:bg-[#FF385C]/5 rounded-xl transition-colors">
+              <div className="bg-[#FF385C]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MapPin className="w-8 h-8 text-[#FF385C]" />
               </div>
               <h3 className="text-xl font-semibold mb-2">1. Find restaurants nearby</h3>
-              <p className="text-gray-600">
+              <p className="text-[#717171]">
                 Use our map or search to discover top-rated eateries in your neighborhood.
               </p>
             </div>
             
-            <div className="text-center p-6 hover:bg-amber-50 rounded-xl transition-colors">
-              <div className="bg-amber-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Utensils className="w-8 h-8 text-amber-600" />
+            <div className="text-center p-6 hover:bg-[#FF385C]/5 rounded-xl transition-colors">
+              <div className="bg-[#FF385C]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Utensils className="w-8 h-8 text-[#FF385C]" />
               </div>
               <h3 className="text-xl font-semibold mb-2">2. Explore unique dishes</h3>
-              <p className="text-gray-600">
+              <p className="text-[#717171]">
                 Browse menus featuring chef specialties and local favorites.
               </p>
             </div>
             
-            <div className="text-center p-6 hover:bg-amber-50 rounded-xl transition-colors">
-              <div className="bg-amber-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Bike className="w-8 h-8 text-amber-600" />
+            <div className="text-center p-6 hover:bg-[#FF385C]/5 rounded-xl transition-colors">
+              <div className="bg-[#FF385C]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Bike className="w-8 h-8 text-[#FF385C]" />
               </div>
               <h3 className="text-xl font-semibold mb-2">3. Fast, reliable delivery</h3>
-              <p className="text-gray-600">
+              <p className="text-[#717171]">
                 Track your order in real-time from kitchen to your door.
               </p>
             </div>
@@ -477,20 +484,20 @@ export default function Home() {
         </section>
         
         {/* Trust & Safety */}
-        <section className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-2xl p-8 mb-16 overflow-hidden relative">
-          <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-amber-200 opacity-20"></div>
-          <div className="absolute -left-20 -bottom-20 w-64 h-64 rounded-full bg-amber-300 opacity-20"></div>
+        <section className="bg-gradient-to-r from-[#FF385C]/5 to-[#FF5A5F]/5 rounded-2xl p-8 mb-16 overflow-hidden relative">
+          <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-[#FF385C]/10 opacity-20"></div>
+          <div className="absolute -left-20 -bottom-20 w-64 h-64 rounded-full bg-[#FF5A5F]/10 opacity-20"></div>
           
           <div className="max-w-4xl mx-auto text-center relative z-10">
-            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-              <ShieldCheck className="w-8 h-8 text-amber-600" />
+            <div className="w-16 h-16 bg-[#FF385C]/10 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <ShieldCheck className="w-8 h-8 text-[#FF385C]" />
             </div>
-            <h2 className="text-2xl font-bold mb-4 text-gray-900">Dine with confidence</h2>
-            <p className="text-gray-700 mb-6 max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold mb-4 text-[#222222]">Dine with confidence</h2>
+            <p className="text-[#717171] mb-6 max-w-2xl mx-auto">
               Every restaurant on TasteVoyage meets our high standards for food quality, 
               safety, and service. Our review system helps you choose the best options.
             </p>
-            <Button variant="outline" className="border-amber-300 text-amber-600 hover:bg-amber-100 bg-white">
+            <Button variant="outline" className="border-[#FF385C]/30 text-[#FF385C] hover:bg-[#FF385C]/10 bg-white">
               Learn about our standards
             </Button>
           </div>
@@ -498,17 +505,17 @@ export default function Home() {
       </div>
       
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-gray-900 to-gray-800 py-16 px-4 sm:px-6 lg:px-8 text-white">
+      <div className="bg-[#222222] py-16 px-4 sm:px-6 lg:px-8 text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to explore local flavors?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto text-gray-300">
+          <p className="text-xl mb-8 max-w-2xl mx-auto text-[#EBEBEB]">
             Join thousands enjoying the best food their neighborhoods have to offer.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button className="bg-white text-gray-900 hover:bg-gray-100 h-12 px-6 rounded-lg font-medium">
+            <Button className="bg-white text-[#222222] hover:bg-[#EBEBEB] h-12 px-6 rounded-lg font-medium">
               Sign up to order
             </Button>
-            <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800 h-12 px-6 rounded-lg font-medium">
+            <Button variant="outline" className="border-[#717171] text-white hover:bg-[#222222] h-12 px-6 rounded-lg font-medium">
               Learn how it works
             </Button>
           </div>
@@ -520,36 +527,36 @@ export default function Home() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <h3 className="text-lg font-semibold mb-4">TasteVoyage</h3>
-            <p className="text-gray-600">
+            <p className="text-[#717171]">
               Connecting food lovers with the best local restaurants and culinary experiences.
             </p>
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-4">For Diners</h3>
             <ul className="space-y-2">
-              <li><Link href="#" className="text-gray-600 hover:text-amber-600">How it works</Link></li>
-              <li><Link href="#" className="text-gray-600 hover:text-amber-600">Gift cards</Link></li>
-              <li><Link href="#" className="text-gray-600 hover:text-amber-600">Help center</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">How it works</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">Gift cards</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">Help center</Link></li>
             </ul>
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-4">For Restaurants</h3>
             <ul className="space-y-2">
-              <li><Link href="#" className="text-gray-600 hover:text-amber-600">Partner with us</Link></li>
-              <li><Link href="#" className="text-gray-600 hover:text-amber-600">Delivery services</Link></li>
-              <li><Link href="#" className="text-gray-600 hover:text-amber-600">Business tools</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">Partner with us</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">Delivery services</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">Business tools</Link></li>
             </ul>
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-4">Company</h3>
             <ul className="space-y-2">
-              <li><Link href="#" className="text-gray-600 hover:text-amber-600">About us</Link></li>
-              <li><Link href="#" className="text-gray-600 hover:text-amber-600">Careers</Link></li>
-              <li><Link href="#" className="text-gray-600 hover:text-amber-600">Contact</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">About us</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">Careers</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">Contact</Link></li>
             </ul>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-gray-200 text-center text-gray-500 text-sm">
+        <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-[#EBEBEB] text-center text-[#717171] text-sm">
           © {new Date().getFullYear()} TasteVoyage, Inc. All rights reserved.
         </div>
       </footer>

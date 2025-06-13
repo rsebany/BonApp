@@ -1,32 +1,24 @@
 import AdminLayout from "@/layouts/Admin/AdminLayout";
-import { Head, Link } from "@inertiajs/react";
-import { Button } from "@/components/ui/button"; // More specific import
-import { Badge } from "@/components/ui/badge"; // More specific import
+import { Head, Link, router } from "@inertiajs/react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
-import { JSX } from "react";
+import React from "react";
+import { MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogTrigger,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
-// Define types for Dropdown sub-components
-interface DropdownComponent {
-    (props: { children: React.ReactNode }): JSX.Element;
-    Trigger: React.ComponentType<{ children: React.ReactNode }>;
-    Content: React.ComponentType<{ children: React.ReactNode }>;
-    Item: React.ComponentType<{ 
-        children: React.ReactNode;
-        className?: string;
-    }>;
-    Link: React.ComponentType<{ 
-        href: string; 
-        method?: string; 
-        as?: string; 
-        className?: string;
-        children: React.ReactNode 
-    }>;
-}
-
-const DropdownMenu = Dropdown.Root as unknown as DropdownComponent;
-DropdownMenu.Trigger = Dropdown.Trigger;
-DropdownMenu.Content = Dropdown.Content;
-DropdownMenu.Item = Dropdown.Item;
+// ... (keep your existing DropdownComponent interface and setup)
 
 interface User {
     id: number;
@@ -39,14 +31,30 @@ interface User {
 }
 
 export default function UsersPage({ users = [] }: { users?: User[] }) {
+    const [isDeleting, setIsDeleting] = React.useState<number | null>(null);
+
     const getRoleBadge = (role: string) => {
         const roleMap: Record<string, 'purple' | 'blue' | 'green' | 'gray'> = {
             admin: 'purple',
             manager: 'blue',
             customer: 'green',
-            driver: 'blue' // Added driver role
+            driver: 'blue'
         };
         return <Badge color={roleMap[role] || 'gray'}>{role}</Badge>;
+    };
+
+    const handleDelete = (userId: number) => {
+        setIsDeleting(userId);
+        router.delete(route('admin.users.destroy', userId), {
+            onSuccess: () => {
+                toast.success('User deleted');
+                setIsDeleting(null);
+            },
+            onError: () => {
+                toast.error('Delete failed');
+                setIsDeleting(null);
+            },
+        });
     };
 
     return (
@@ -92,39 +100,69 @@ export default function UsersPage({ users = [] }: { users?: User[] }) {
                                             {new Date(user.created_at).toLocaleDateString()}
                                         </td>
                                         <td className="p-4 align-middle">
-                                            <DropdownMenu>
-                                                <DropdownMenu.Trigger >
-                                                    <Button variant="ghost" size="sm">Actions</Button>
-                                                </DropdownMenu.Trigger>
-                                                <DropdownMenu.Content>
-                                                    <DropdownMenu.Item>
-                                                        <DropdownMenu.Link 
-                                                            href={route('admin.users.edit', user.id)}
-                                                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            <Dropdown.Root>
+                                                <Dropdown.Trigger asChild>
+                                                    <Button variant="ghost" size="sm">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </Dropdown.Trigger>
+                                                <Dropdown.Content className="w-40">
+                                                    <Dropdown.Item asChild>
+                                                        <Link 
+                                                            href={route('admin.users.show', user.id)} 
+                                                            className="flex items-center justify-between w-full p-2 hover:bg-gray-100"
                                                         >
-                                                            Edit
-                                                        </DropdownMenu.Link>
-                                                    </DropdownMenu.Item>
-                                                    <DropdownMenu.Item>
-                                                        <DropdownMenu.Link 
-                                                            href={route('admin.users.show', user.id)}
-                                                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                            <div className="flex items-center">
+                                                                <Eye className="h-4 w-4 mr-2" />
+                                                                <span>View</span>
+                                                            </div>
+                                                        </Link>
+                                                    </Dropdown.Item>
+                                                    <Dropdown.Item asChild>
+                                                        <Link 
+                                                            href={route('admin.users.edit', user.id)} 
+                                                            className="flex items-center justify-between w-full p-2 hover:bg-gray-100"
                                                         >
-                                                            View
-                                                        </DropdownMenu.Link>
-                                                    </DropdownMenu.Item>
-                                                    <DropdownMenu.Item>
-                                                        <DropdownMenu.Link
-                                                            href={route('admin.users.destroy', user.id)}
-                                                            method="delete"
-                                                            as="button"
-                                                            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                                                        >
-                                                            Delete
-                                                        </DropdownMenu.Link>
-                                                    </DropdownMenu.Item>
-                                                </DropdownMenu.Content>
-                                            </DropdownMenu>
+                                                            <div className="flex items-center">
+                                                                <Edit className="h-4 w-4 mr-2" />
+                                                                <span>Edit</span>
+                                                            </div>
+                                                        </Link>
+                                                    </Dropdown.Item>
+                                                    <Dropdown.Item asChild>
+                                                        <div>
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger className="w-full text-left">
+                                                                    <div className="flex items-center justify-between w-full p-2 hover:bg-gray-100 cursor-pointer">
+                                                                        <div className="flex items-center">
+                                                                            <Trash2 className="h-4 w-4 mr-2" />
+                                                                            <span>Delete</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>Delete {user.first_name} {user.last_name}?</AlertDialogTitle>
+                                                                        <AlertDialogDescription>
+                                                                            This will permanently delete this user account and all associated data.
+                                                                            This action cannot be undone.
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                        <AlertDialogAction
+                                                                            onClick={() => handleDelete(user.id)}
+                                                                            disabled={isDeleting === user.id}
+                                                                        >
+                                                                            {isDeleting === user.id ? 'Deleting...' : 'Delete'}
+                                                                        </AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        </div>
+                                                    </Dropdown.Item>
+                                                </Dropdown.Content>
+                                            </Dropdown.Root>
                                         </td>
                                     </tr>
                                 ))}

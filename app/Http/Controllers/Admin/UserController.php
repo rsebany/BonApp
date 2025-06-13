@@ -10,6 +10,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
@@ -150,29 +151,98 @@ class UserController extends Controller
             ->select(
                 'addresses.*',
                 'countries.country_name',
-                'customer_addresses.is_default'
             )
             ->where('customer_addresses.customer_id', $id)
             ->get();
 
         return Inertia::render('admin/Users/show', [
-            'user' => new UserResource($user),
-            'userStats' => $userStats,
-            'addresses' => $addresses,
-        ]);
+            'user' => $user, 
+            'userStats' => $this->getUserStats($user),
+            'addresses' => $this->getUserAddresses($user)
+    ]);
     }
 
-    public function edit($id)
+    /**
+     * Get addresses for a user (customer).
+     */
+    protected function getUserAddresses(User $user)
+    {
+        return DB::table('customer_addresses')
+            ->join('addresses', 'customer_addresses.address_id', '=', 'addresses.id')
+            ->join('countries', 'addresses.country_id', '=', 'countries.id')
+            ->select(
+                'addresses.*',
+                'countries.country_name',
+            )
+            ->where('customer_addresses.customer_id', $user->id)
+            ->get();
+    }
+
+    /**
+     * Get statistics for a user (customer).
+     */
+    protected function getUserStats(User $user)
+    {
+        if ($user->role !== 'customer') {
+            return [];
+        }
+
+        $id = $user->id;
+
+        $stats = [
+            'total_orders' => DB::table('food_orders')->where('customer_id', $id)->count(),
+            'completed_orders' => DB::table('food_orders')
+                ->where('customer_id', $id)
+                ->where('order_status_id', 4)
+                ->count(),
+            'total_spent' => DB::table('food_orders')
+                ->where('customer_id', $id)
+                ->where('order_status_id', 4)
+                ->sum('total_amount'),
+            'average_order_value' => DB::table('food_orders')
+                ->where('customer_id', $id)
+                ->where('order_status_id', 4)
+                ->avg('total_amount'),
+            'favorite_restaurants' => DB::table('food_orders')
+                ->join('restaurants', 'food_orders.restaurant_id', '=', 'restaurants.id')
+                ->select('restaurants.restaurant_name', DB::raw('COUNT(*) as order_count'))
+                ->where('food_orders.customer_id', $id)
+                ->groupBy('restaurants.id', 'restaurants.restaurant_name')
+                ->orderBy('order_count', 'desc')
+                ->limit(5)
+                ->get(),
+        ];
+
+        // Recent orders
+        $recentOrders = DB::table('food_orders')
+            ->join('restaurants', 'food_orders.restaurant_id', '=', 'restaurants.id')
+            ->join('order_statuses', 'food_orders.order_status_id', '=', 'order_statuses.id')
+            ->select(
+                'food_orders.id',
+                'food_orders.total_amount',
+                'food_orders.created_at',
+                'restaurants.restaurant_name',
+                'order_statuses.status_value'
+            )
+            ->where('food_orders.customer_id', $id)
+            ->orderBy('food_orders.created_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        $stats['recent_orders'] = $recentOrders;
+
+        return $stats;
+    }
+
+    public function edit(User $user)
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
             return redirect('/dashboard');
         }
 
-        $user = User::findOrFail($id);
-
-        return Inertia::render('Admin/Users/Edit', [
-            'user' => new UserResource($user),
+        return Inertia::render('admin/Users/edit', [
+            'user' => $user
         ]);
     }
 
@@ -213,44 +283,34 @@ class UserController extends Controller
             ->with('success', 'User updated successfully');
     }
 
-    public function destroy($id)
+    public function destroy(User $user)
     {
-        // Ensure user is admin
-        if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+        // Authorization
+        if (!auth()->user()->isAdmin()) {
+            return back()->with('error', 'Unauthorized action.');
         }
 
-        $user = User::findOrFail($id);
-
-        // Prevent admin from deleting themselves
+        // Prevent self-deletion
         if ($user->id === auth()->id()) {
-            return back()->withErrors(['error' => 'You cannot delete your own account.']);
+            return back()->with('error', 'You cannot delete your own account.');
         }
 
-        // Check if user has orders
-        $hasOrders = DB::table('food_orders')->where('customer_id', $id)->exists();
-
-        if ($hasOrders) {
-            return back()->withErrors(['error' => 'Cannot delete user with existing orders. Deactivate the account instead.']);
+        // Check for existing orders
+        if ($user->orders()->exists()) {
+            return back()->with('error', 'Cannot delete user with existing orders.');
         }
 
         try {
-            DB::beginTransaction();
-
-            // Delete user addresses
-            DB::table('customer_addresses')->where('customer_id', $id)->delete();
-            
-            // Delete user
-            $user->delete();
-
-            DB::commit();
+            DB::transaction(function () use ($user) {
+                $user->addresses()->delete();
+                $user->delete();
+            });
 
             return redirect()->route('admin.users.index')
                 ->with('success', 'User deleted successfully');
 
         } catch (\Exception $e) {
-            DB::rollback();
-            return back()->withErrors(['error' => 'Failed to delete user. Please try again.']);
+            return back()->with('error', 'Failed to delete user: ' . $e->getMessage());
         }
     }
 
@@ -418,5 +478,26 @@ class UserController extends Controller
         }
 
         return Inertia::render('admin/Users/create');
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'password' => ['required', 'confirmed', Password::defaults()],
+            'role' => 'required|string|in:admin,manager,customer,driver',
+        ]);
+
+        $user = User::create([
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,
+        ]);
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'User created successfully');
     }
 }
