@@ -1,6 +1,5 @@
 # BonApp 🍔 | Laravel + React Starter Kit
 
-![BonApp Banner](https://via.placeholder.com/1200x400?text=BonApp+Food+Delivery) <!-- Replace with your actual banner image -->
 
 BonApp is a modern food delivery system built with Laravel and React. Whether you're exploring a new city or on a road trip, BonApp helps you discover and order from the best restaurants around you.
 
