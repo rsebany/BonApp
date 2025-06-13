@@ -40,30 +40,27 @@ BonApp is a modern food delivery system built with Laravel and React. Whether yo
 - MySQL/PostgreSQL
 - Laravel CLI
 
-### Installation
+## 🚀 Installation
 
-1. Clone the repository:
-git clone https://github.com/yourusername/bonapp.git
+1. **Clone the repository**:
+```bash
+git clone https://github.com/rsebany/bonapp.git
 cd bonapp
 
-Install dependencies:
 composer install
 npm install
-Configure environment:
 
 cp .env.example .env
 php artisan key:generate
-Set up database:
+
+composer install
+npm install
 
 php artisan migrate --seed
-Start development servers:
 
 npm run dev
 php artisan serve
-The app will be running at http://localhost:8000
 
-📂 Project Structure
-text
 bonapp/
 ├── app/               # Laravel application core
 ├── bootstrap/
@@ -78,15 +75,20 @@ bonapp/
 ├── storage/
 ├── tests/
 └── vite.config.js     # Vite configuration
+
 🤝 Contributing
 We welcome contributions! Please follow these steps:
 
 Fork the project
+
 Create your feature branch (git checkout -b feature/AmazingFeature)
+
 Commit your changes (git commit -m 'Add some AmazingFeature')
+
 Push to the branch (git push origin feature/AmazingFeature)
 
 Open a Pull Request
+
 Please read our Contribution Guidelines before submitting.
 
 📜 License
@@ -94,4 +96,5 @@ Distributed under the MIT License. See LICENSE for more information.
 
 📬 Contact
 Romualdo SEBANY - romualdosebany.tech@gmail.com
+
 Project Link: https://github.com/rsebany/bonapp
