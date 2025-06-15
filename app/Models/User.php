@@ -80,6 +80,11 @@ class User extends Authenticatable
         return $this->hasMany(FoodOrder::class, 'customer_id');
     }
 
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
+    }
+
     public function driver()
     {
         return $this->hasOne(Driver::class);

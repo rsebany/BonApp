@@ -154,7 +154,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <Link href="/" className="flex items-center">
-              <span className="text-2xl font-bold bg-gradient-to-r from-[#FF385C] to-[#FF5A5F] bg-clip-text text-transparent">
+              <span className="text-2xl font-bold bg-gradient-to-r from-[#00A699] to-[#008489] bg-clip-text text-transparent">
                 BonApp
               </span>
             </Link>
@@ -167,7 +167,7 @@ export default function Home() {
                 </Button>
               </Link>
               <Link href={route('register')}>
-                <Button className="bg-[#FF385C] hover:bg-[#FF5A5F] text-white">
+                <Button className="bg-[#00A699] hover:bg-[#008489] text-white">
                   Sign Up
                 </Button>
               </Link>
@@ -208,7 +208,7 @@ export default function Home() {
                   />
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#717171]" />
                 </div>
-                <Button className="rounded-none bg-gradient-to-r from-[#FF385C] to-[#FF5A5F] hover:from-[#FF5A5F] hover:to-[#FF385C] px-8 py-6 text-white font-medium">
+                <Button className="rounded-none bg-gradient-to-r from-[#00A699] to-[#008489] hover:from-[#008489] hover:to-[#00A699] px-8 py-6 text-white font-medium">
                   <MapPin className="mr-2 h-5 w-5" /> Show map
                 </Button>
               </div>
@@ -220,7 +220,7 @@ export default function Home() {
                 <Button 
                   key={item} 
                   variant="ghost" 
-                  className="text-[#222222] hover:bg-[#FF385C]/10 hover:text-[#FF385C] text-sm h-8 px-3 rounded-full border"
+                  className="text-[#222222] hover:bg-[#00A699]/10 hover:text-[#00A699] text-sm h-8 px-3 rounded-full border"
                 >
                   {item}
                 </Button>
@@ -239,7 +239,7 @@ export default function Home() {
               <Button
                 key={category}
                 variant={activeCategory === category ? 'default' : 'outline'}
-                className={`whitespace-nowrap rounded-full ${activeCategory === category ? 'bg-[#FF385C] hover:bg-[#FF5A5F]' : ''}`}
+                className={`whitespace-nowrap rounded-full ${activeCategory === category ? 'bg-[#00A699] hover:bg-[#008489]' : ''}`}
                 onClick={() => setActiveCategory(category)}
               >
                 {category}
@@ -252,7 +252,7 @@ export default function Home() {
         <section className="mb-16">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-[#222222]">Dining experiences nearby</h2>
-            <Link href="/restaurants" className="flex items-center text-[#FF385C] hover:underline font-medium">
+            <Link href="/restaurants" className="flex items-center text-[#00A699] hover:underline font-medium">
               View all <ChevronRight className="w-4 h-4 ml-1" />
             </Link>
           </div>
@@ -280,11 +280,11 @@ export default function Home() {
                       <Button 
                         size="icon" 
                         variant="ghost" 
-                        className={`absolute top-2 right-2 rounded-full ${savedRestaurants.includes(restaurant.id) ? 'bg-[#FF385C]/10 hover:bg-[#FF385C]/20' : 'bg-white/90 hover:bg-white'}`}
+                        className={`absolute top-2 right-2 rounded-full ${savedRestaurants.includes(restaurant.id) ? 'bg-[#00A699]/10 hover:bg-[#00A699]/20' : 'bg-white/90 hover:bg-white'}`}
                         onClick={() => toggleSaved(restaurant.id)}
                       >
                         <Heart 
-                          className={`w-5 h-5 ${savedRestaurants.includes(restaurant.id) ? 'fill-[#FF385C] text-[#FF385C]' : 'text-[#717171]'}`} 
+                          className={`w-5 h-5 ${savedRestaurants.includes(restaurant.id) ? 'fill-[#00A699] text-[#00A699]' : 'text-[#717171]'}`} 
                         />
                       </Button>
                       {restaurant.name && (
@@ -298,7 +298,7 @@ export default function Home() {
                     </div>
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-start">
-                        <CardTitle className="group-hover:text-[#FF385C] transition-colors text-lg">
+                        <CardTitle className="group-hover:text-[#00A699] transition-colors text-lg">
                           {restaurant.name}
                         </CardTitle>
                         <div className="flex items-center bg-[#EBEBEB] px-2 py-1 rounded-md">
@@ -336,7 +336,7 @@ export default function Home() {
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="border-[#FF385C]/30 text-[#FF385C] hover:bg-[#FF385C]/10 hover:text-[#FF385C]"
+                        className="border-[#00A699]/30 text-[#00A699] hover:bg-[#00A699]/10 hover:text-[#00A699]"
                       >
                         Order now
                       </Button>
@@ -352,7 +352,7 @@ export default function Home() {
         <section className="mb-16">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-[#222222]">Explore by category</h2>
-            <Link href="/categories" className="flex items-center text-[#FF385C] hover:underline font-medium">
+            <Link href="/categories" className="flex items-center text-[#00A699] hover:underline font-medium">
               View all <ChevronRight className="w-4 h-4 ml-1" />
             </Link>
           </div>
@@ -386,7 +386,7 @@ export default function Home() {
               <h2 className="text-2xl font-bold text-[#222222]">Local favorites</h2>
               <p className="text-[#717171]">Highly rated by people in your area</p>
             </div>
-            <Link href="/local-favorites" className="flex items-center text-[#FF385C] hover:underline font-medium">
+            <Link href="/local-favorites" className="flex items-center text-[#00A699] hover:underline font-medium">
               View all <ChevronRight className="w-4 h-4 ml-1" />
             </Link>
           </div>
@@ -405,7 +405,7 @@ export default function Home() {
                     </div>
                     <div className="sm:w-2/3 p-6">
                       <div className="flex justify-between items-start mb-2">
-                        <CardTitle className="text-xl group-hover:text-[#FF385C] transition-colors">
+                        <CardTitle className="text-xl group-hover:text-[#00A699] transition-colors">
                           {restaurant.name}
                         </CardTitle>
                         <div className="flex items-center bg-[#EBEBEB] px-2 py-1 rounded-md">
@@ -433,7 +433,7 @@ export default function Home() {
                           <Clock className="w-4 h-4 mr-1" />
                           <span className="text-sm">{restaurant.deliveryTime}</span>
                         </div>
-                        <Button size="sm" className="bg-[#FF385C] hover:bg-[#FF5A5F]">
+                        <Button size="sm" className="bg-[#00A699] hover:bg-[#008489]">
                           View menu <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                       </div>
@@ -451,9 +451,9 @@ export default function Home() {
         <section className="mb-16">
           <h2 className="text-2xl font-bold mb-8 text-center text-[#222222]">How TasteVoyage works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-6 hover:bg-[#FF385C]/5 rounded-xl transition-colors">
-              <div className="bg-[#FF385C]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MapPin className="w-8 h-8 text-[#FF385C]" />
+            <div className="text-center p-6 hover:bg-[#00A699]/5 rounded-xl transition-colors">
+              <div className="bg-[#00A699]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MapPin className="w-8 h-8 text-[#00A699]" />
               </div>
               <h3 className="text-xl font-semibold mb-2">1. Find restaurants nearby</h3>
               <p className="text-[#717171]">
@@ -461,9 +461,9 @@ export default function Home() {
               </p>
             </div>
             
-            <div className="text-center p-6 hover:bg-[#FF385C]/5 rounded-xl transition-colors">
-              <div className="bg-[#FF385C]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Utensils className="w-8 h-8 text-[#FF385C]" />
+            <div className="text-center p-6 hover:bg-[#00A699]/5 rounded-xl transition-colors">
+              <div className="bg-[#00A699]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Utensils className="w-8 h-8 text-[#00A699]" />
               </div>
               <h3 className="text-xl font-semibold mb-2">2. Explore unique dishes</h3>
               <p className="text-[#717171]">
@@ -471,9 +471,9 @@ export default function Home() {
               </p>
             </div>
             
-            <div className="text-center p-6 hover:bg-[#FF385C]/5 rounded-xl transition-colors">
-              <div className="bg-[#FF385C]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Bike className="w-8 h-8 text-[#FF385C]" />
+            <div className="text-center p-6 hover:bg-[#00A699]/5 rounded-xl transition-colors">
+              <div className="bg-[#00A699]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Bike className="w-8 h-8 text-[#00A699]" />
               </div>
               <h3 className="text-xl font-semibold mb-2">3. Fast, reliable delivery</h3>
               <p className="text-[#717171]">
@@ -484,20 +484,20 @@ export default function Home() {
         </section>
         
         {/* Trust & Safety */}
-        <section className="bg-gradient-to-r from-[#FF385C]/5 to-[#FF5A5F]/5 rounded-2xl p-8 mb-16 overflow-hidden relative">
-          <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-[#FF385C]/10 opacity-20"></div>
-          <div className="absolute -left-20 -bottom-20 w-64 h-64 rounded-full bg-[#FF5A5F]/10 opacity-20"></div>
+        <section className="bg-gradient-to-r from-[#00A699]/5 to-[#008489]/5 rounded-2xl p-8 mb-16 overflow-hidden relative">
+          <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-[#00A699]/10 opacity-20"></div>
+          <div className="absolute -left-20 -bottom-20 w-64 h-64 rounded-full bg-[#008489]/10 opacity-20"></div>
           
           <div className="max-w-4xl mx-auto text-center relative z-10">
-            <div className="w-16 h-16 bg-[#FF385C]/10 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-              <ShieldCheck className="w-8 h-8 text-[#FF385C]" />
+            <div className="w-16 h-16 bg-[#00A699]/10 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <ShieldCheck className="w-8 h-8 text-[#00A699]" />
             </div>
             <h2 className="text-2xl font-bold mb-4 text-[#222222]">Dine with confidence</h2>
             <p className="text-[#717171] mb-6 max-w-2xl mx-auto">
               Every restaurant on TasteVoyage meets our high standards for food quality, 
               safety, and service. Our review system helps you choose the best options.
             </p>
-            <Button variant="outline" className="border-[#FF385C]/30 text-[#FF385C] hover:bg-[#FF385C]/10 bg-white">
+            <Button variant="outline" className="border-[#00A699]/30 text-[#00A699] hover:bg-[#00A699]/10 bg-white">
               Learn about our standards
             </Button>
           </div>
@@ -534,25 +534,25 @@ export default function Home() {
           <div>
             <h3 className="text-lg font-semibold mb-4">For Diners</h3>
             <ul className="space-y-2">
-              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">How it works</Link></li>
-              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">Gift cards</Link></li>
-              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">Help center</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#00A699]">How it works</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#00A699]">Gift cards</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#00A699]">Help center</Link></li>
             </ul>
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-4">For Restaurants</h3>
             <ul className="space-y-2">
-              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">Partner with us</Link></li>
-              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">Delivery services</Link></li>
-              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">Business tools</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#00A699]">Partner with us</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#00A699]">Delivery services</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#00A699]">Business tools</Link></li>
             </ul>
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-4">Company</h3>
             <ul className="space-y-2">
-              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">About us</Link></li>
-              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">Careers</Link></li>
-              <li><Link href="#" className="text-[#717171] hover:text-[#FF385C]">Contact</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#00A699]">About us</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#00A699]">Careers</Link></li>
+              <li><Link href="#" className="text-[#717171] hover:text-[#00A699]">Contact</Link></li>
             </ul>
           </div>
         </div>

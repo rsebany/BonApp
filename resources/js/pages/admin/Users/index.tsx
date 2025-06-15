@@ -7,7 +7,6 @@ import React from "react";
 import { MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react";
 import {
     AlertDialog,
-    AlertDialogTrigger,
     AlertDialogContent,
     AlertDialogHeader,
     AlertDialogTitle,
@@ -17,8 +16,6 @@ import {
     AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-
-// ... (keep your existing DropdownComponent interface and setup)
 
 interface User {
     id: number;
@@ -32,6 +29,9 @@ interface User {
 
 export default function UsersPage({ users = [] }: { users?: User[] }) {
     const [isDeleting, setIsDeleting] = React.useState<number | null>(null);
+    const [deleteError, setDeleteError] = React.useState<string | null>(null);
+    const [dialogOpen, setDialogOpen] = React.useState<number | null>(null);
+    const [userToDelete, setUserToDelete] = React.useState<User | null>(null);
 
     const getRoleBadge = (role: string) => {
         const roleMap: Record<string, 'purple' | 'blue' | 'green' | 'gray'> = {
@@ -43,18 +43,58 @@ export default function UsersPage({ users = [] }: { users?: User[] }) {
         return <Badge color={roleMap[role] || 'gray'}>{role}</Badge>;
     };
 
-    const handleDelete = (userId: number) => {
-        setIsDeleting(userId);
-        router.delete(route('admin.users.destroy', userId), {
-            onSuccess: () => {
-                toast.success('User deleted');
-                setIsDeleting(null);
-            },
-            onError: () => {
-                toast.error('Delete failed');
-                setIsDeleting(null);
-            },
-        });
+    const openDeleteDialog = (user: User) => {
+        setUserToDelete(user);
+        setDialogOpen(user.id);
+        setDeleteError(null);
+    };
+
+    const closeDeleteDialog = () => {
+        setDialogOpen(null);
+        setUserToDelete(null);
+        setDeleteError(null);
+    };
+
+    const handleDelete = async () => {
+        if (!userToDelete) return;
+        
+        setDeleteError(null);
+        setIsDeleting(userToDelete.id);
+        
+        try {
+            router.delete(route('admin.users.destroy', userToDelete.id), {
+                onSuccess: () => {
+                    toast.success('User deleted successfully');
+                    closeDeleteDialog();
+                },
+                onError: (errors) => {
+                    console.error('Delete error:', errors);
+                    // Handle different types of errors
+                    if (typeof errors === 'string') {
+                        setDeleteError(errors);
+                        toast.error(errors);
+                    } else if (errors.message) {
+                        setDeleteError(errors.message);
+                        toast.error(errors.message);
+                    } else if (errors.error) {
+                        setDeleteError(errors.error);
+                        toast.error(errors.error);
+                    } else {
+                        setDeleteError('Failed to delete user');
+                        toast.error('Failed to delete user');
+                    }
+                },
+                onFinish: () => {
+                    setIsDeleting(null);
+                },
+                preserveScroll: true,
+            });
+        } catch (error) {
+            console.error('Unexpected error:', error);
+            setDeleteError('An unexpected error occurred');
+            toast.error('An unexpected error occurred');
+            setIsDeleting(null);
+        }
     };
 
     return (
@@ -130,35 +170,14 @@ export default function UsersPage({ users = [] }: { users?: User[] }) {
                                                         </Link>
                                                     </Dropdown.Item>
                                                     <Dropdown.Item asChild>
-                                                        <div>
-                                                            <AlertDialog>
-                                                                <AlertDialogTrigger className="w-full text-left">
-                                                                    <div className="flex items-center justify-between w-full p-2 hover:bg-gray-100 cursor-pointer">
-                                                                        <div className="flex items-center">
-                                                                            <Trash2 className="h-4 w-4 mr-2" />
-                                                                            <span>Delete</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </AlertDialogTrigger>
-                                                                <AlertDialogContent>
-                                                                    <AlertDialogHeader>
-                                                                        <AlertDialogTitle>Delete {user.first_name} {user.last_name}?</AlertDialogTitle>
-                                                                        <AlertDialogDescription>
-                                                                            This will permanently delete this user account and all associated data.
-                                                                            This action cannot be undone.
-                                                                        </AlertDialogDescription>
-                                                                    </AlertDialogHeader>
-                                                                    <AlertDialogFooter>
-                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                        <AlertDialogAction
-                                                                            onClick={() => handleDelete(user.id)}
-                                                                            disabled={isDeleting === user.id}
-                                                                        >
-                                                                            {isDeleting === user.id ? 'Deleting...' : 'Delete'}
-                                                                        </AlertDialogAction>
-                                                                    </AlertDialogFooter>
-                                                                </AlertDialogContent>
-                                                            </AlertDialog>
+                                                        <div 
+                                                            className="flex items-center justify-between w-full p-2 hover:bg-gray-100 cursor-pointer"
+                                                            onClick={() => openDeleteDialog(user)}
+                                                        >
+                                                            <div className="flex items-center">
+                                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                                <span>Delete</span>
+                                                            </div>
                                                         </div>
                                                     </Dropdown.Item>
                                                 </Dropdown.Content>
@@ -170,6 +189,36 @@ export default function UsersPage({ users = [] }: { users?: User[] }) {
                         </table>
                     )}
                 </div>
+
+                {/* Delete Confirmation Dialog */}
+                <AlertDialog open={dialogOpen !== null} onOpenChange={(open) => !open && closeDeleteDialog()}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to delete {userToDelete?.first_name} {userToDelete?.last_name}? 
+                                This action cannot be undone and will permanently delete the user account.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        {deleteError && (
+                            <div className="text-red-500 px-4 py-2 bg-red-50 rounded">
+                                {deleteError}
+                            </div>
+                        )}
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={closeDeleteDialog}>
+                                Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={handleDelete}
+                                disabled={isDeleting !== null}
+                                className="bg-red-600 hover:bg-red-700"
+                            >
+                                {isDeleting !== null ? 'Deleting...' : 'Delete'}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </AdminLayout>
     );

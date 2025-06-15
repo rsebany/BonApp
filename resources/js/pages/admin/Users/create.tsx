@@ -3,7 +3,7 @@ import { Head, useForm, Link } from "@inertiajs/react";
 import { Button, Input } from "@/components/ui";
 import { FormEvent } from "react";
 import * as RadixSelect from "@radix-ui/react-select";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check, ArrowLeft } from "lucide-react";
 
 interface UserFormData {
   first_name: string;
@@ -44,7 +44,7 @@ export default function CreateUserPage() {
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold tracking-tight">Add New User</h2>
           <Button asChild variant="outline">
-            <Link href={route('admin.users.index')}>Back to Users</Link>
+            <Link href={route('admin.users.index')}><ArrowLeft className="h-4 w-4 mr-2" /> Back to Users</Link>
           </Button>
         </div>
 

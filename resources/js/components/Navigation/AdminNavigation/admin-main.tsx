@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
+import { usePage } from '@inertiajs/react';
 import { 
   Users, 
   ShoppingBag, 
   TrendingUp, 
-  Clock, 
   DollarSign,
   MapPin,
   Star,
@@ -20,82 +20,105 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  Line
+  ResponsiveContainer
 } from 'recharts';
 import { Link } from '@inertiajs/react';
 
-// Define types for your data
+// Type Definitions
 type StatCardProps = {
-  label: string;
-  value: string;
-  change: string;
-  trend: 'up' | 'down';
-  icon: React.ComponentType<{ className?: string }>;
+  stat: {
+    label: string;
+    value: string | number;
+    icon: React.ElementType;
+    change?: string;
+    trend?: 'up' | 'down';
+  };
 };
 
-type OrderStatusData = {
-  name: string;
-  value: number;
-  color: string;
+type OrderStatusType = 'Delivered' | 'In Transit' | 'Preparing' | 'Cancelled';
+
+type GrowthMetrics = {
+  orders_growth: number;
+  revenue_growth: number;
 };
+
+type StatProps = {
+  total_orders: number;
+  total_customers: number;
+  total_revenue: number;
+  total_restaurants: number;
+};
+
+type TodayStatsProps = {
+  orders: number;
+  revenue: number;
+  new_customers: number;
+};
+
+type OrderStatusDistribution = {
+  status: string;
+  count: number;
+}[];
 
 type RecentOrder = {
-  id: string;
-  customer: string;
-  restaurant: string;
-  amount: string;
-  status: 'Delivered' | 'In Transit' | 'Preparing' | 'Cancelled';
-  time: string;
-};
+  id: number;
+  status: string;
+  customer_name: string;
+  restaurant_name: string;
+  created_at: string;
+  total_amount: number;
+}[];
 
 type TopRestaurant = {
+  id: number;
   name: string;
+  avg_rating: number;
+  total_orders: number;
+  total_revenue: number;
+}[];
+
+type WeeklyRevenue = {
+  date: string;
+  revenue: number;
+}[];
+
+type MonthlyOrders = {
+  date: string;
   orders: number;
-  rating: number;
-  revenue: string;
+}[];
+
+type AdminPageProps = {
+  stats: StatProps;
+  todayStats: TodayStatsProps;
+  weeklyRevenue: WeeklyRevenue;
+  orderStatusDistribution: OrderStatusDistribution;
+  monthlyOrders: MonthlyOrders;
+  recentOrders: RecentOrder;
+  topRestaurants: TopRestaurant;
+  growthMetrics: GrowthMetrics;
 };
 
-// Mock data - replace with real data from your API
-const mockData = {
-  stats: [
-    { label: 'Total Orders', value: '2,847', change: '+12.5%', trend: 'up', icon: ShoppingBag },
-    { label: 'Active Customers', value: '1,234', change: '+8.2%', trend: 'up', icon: Users },
-    { label: 'Revenue Today', value: '$15,847', change: '+23.1%', trend: 'up', icon: DollarSign },
-    { label: 'Avg Delivery Time', value: '28 min', change: '-2.3%', trend: 'down', icon: Clock }
-  ] as StatCardProps[],
-  revenueData: [
-    { date: 'Mon', revenue: 2400, orders: 45 },
-    { date: 'Tue', revenue: 1398, orders: 32 },
-    { date: 'Wed', revenue: 9800, orders: 89 },
-    { date: 'Thu', revenue: 3908, orders: 67 },
-    { date: 'Fri', revenue: 4800, orders: 92 },
-    { date: 'Sat', revenue: 3800, orders: 78 },
-    { date: 'Sun', revenue: 4300, orders: 85 }
-  ],
-  orderStatusData: [
-    { name: 'Delivered', value: 1847, color: '#10B981' },
-    { name: 'In Transit', value: 423, color: '#F59E0B' },
-    { name: 'Preparing', value: 298, color: '#3B82F6' },
-    { name: 'Cancelled', value: 89, color: '#EF4444' }
-  ] as OrderStatusData[],
-  recentOrders: [
-    { id: '#12847', customer: 'John Doe', restaurant: 'Pizza Palace', amount: '$45.50', status: 'Delivered', time: '2 min ago' },
-    { id: '#12846', customer: 'Sarah Wilson', restaurant: 'Burger King', amount: '$23.75', status: 'In Transit', time: '5 min ago' },
-    { id: '#12845', customer: 'Mike Johnson', restaurant: 'Sushi Zen', amount: '$67.20', status: 'Preparing', time: '8 min ago' },
-    { id: '#12844', customer: 'Emily Brown', restaurant: 'Taco Bell', amount: '$31.90', status: 'Delivered', time: '12 min ago' },
-    { id: '#12843', customer: 'David Lee', restaurant: 'Thai Garden', amount: '$52.40', status: 'Cancelled', time: '15 min ago' }
-  ] as RecentOrder[],
-  topRestaurants: [
-    { name: 'Pizza Palace', orders: 245, rating: 4.8, revenue: '$12,450' },
-    { name: 'Burger King', orders: 198, rating: 4.6, revenue: '$9,870' },
-    { name: 'Sushi Zen', orders: 156, rating: 4.9, revenue: '$15,680' },
-    { name: 'Taco Bell', orders: 134, rating: 4.4, revenue: '$6,720' },
-    { name: 'Thai Garden', orders: 112, rating: 4.7, revenue: '$8,960' }
-  ] as TopRestaurant[]
+// Default Data
+const DEFAULT_STATS: StatProps = {
+  total_orders: 0,
+  total_customers: 0,
+  total_revenue: 0,
+  total_restaurants: 0
 };
 
-const StatCard = ({ stat }: { stat: StatCardProps }) => {
+const DEFAULT_TODAY_STATS: TodayStatsProps = {
+  orders: 0,
+  revenue: 0,
+  new_customers: 0
+};
+
+const DEFAULT_GROWTH_METRICS: GrowthMetrics = {
+  orders_growth: 0,
+  revenue_growth: 0
+};
+
+// Components
+const StatCard: React.FC<StatCardProps> = ({ stat }) => {
   const Icon = stat.icon;
   const isPositive = stat.trend === 'up';
   
@@ -111,34 +134,113 @@ const StatCard = ({ stat }: { stat: StatCardProps }) => {
             <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
           </div>
         </div>
-        <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-sm font-medium ${
-          isPositive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-        }`}>
-          <TrendingUp className={`w-4 h-4 ${!isPositive && 'rotate-180'}`} />
-          <span>{stat.change}</span>
-        </div>
+        {stat.change && (
+          <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-sm font-medium ${
+            isPositive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+          }`}>
+            <TrendingUp className={`w-4 h-4 ${!isPositive && 'rotate-180'}`} />
+            <span>{stat.change}</span>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-const OrderStatusBadge = ({ status }: { status: RecentOrder['status'] }) => {
-  const colors = {
+const OrderStatusBadge = ({ status }: { status: string }) => {
+  const colors: Record<OrderStatusType, string> = {
     'Delivered': 'bg-green-100 text-green-700',
     'In Transit': 'bg-yellow-100 text-yellow-700',
     'Preparing': 'bg-blue-100 text-blue-700',
     'Cancelled': 'bg-red-100 text-red-700'
   };
-  
+
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status]}`}>
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status as OrderStatusType] || 'bg-gray-100 text-gray-700'}`}>
       {status}
     </span>
   );
 };
 
-export function AdminMain() {
+// Helper function to get color based on status
+const getStatusColor = (status: string): string => {
+  switch(status) {
+    case 'Delivered':
+      return '#10B981';
+    case 'In Transit':
+      return '#F59E0B';
+    case 'Preparing':
+      return '#3B82F6';
+    case 'Cancelled':
+      return '#EF4444';
+    default:
+      return '#9CA3AF';
+  }
+};
+
+// Main Component
+export const AdminMain: React.FC = () => {
+  const { props } = usePage<AdminPageProps>();
   const [timeRange, setTimeRange] = useState('7d');
+  
+  // Safely access props with fallbacks
+  const stats = props.stats || DEFAULT_STATS;
+  const todayStats = props.todayStats || DEFAULT_TODAY_STATS;
+  const weeklyRevenue = props.weeklyRevenue || [];
+  const monthlyOrders = props.monthlyOrders || [];
+  const orderStatusDistribution = props.orderStatusDistribution || [];
+  const topRestaurants = props.topRestaurants || [];
+  const recentOrders = props.recentOrders || [];
+  const growthMetrics = props.growthMetrics || DEFAULT_GROWTH_METRICS;
+
+  // Format stats data
+  const statCards = [
+    { 
+      label: 'Total Orders', 
+      value: stats.total_orders.toLocaleString(), 
+      icon: ShoppingBag 
+    },
+    { 
+      label: 'Active Customers', 
+      value: stats.total_customers.toLocaleString(), 
+      icon: Users 
+    },
+    { 
+      label: 'Total Revenue', 
+      value: `$${stats.total_revenue.toLocaleString(undefined, {maximumFractionDigits: 2})}`, 
+      icon: DollarSign 
+    },
+    { 
+      label: 'Restaurants', 
+      value: stats.total_restaurants.toLocaleString(), 
+      icon: MapPin 
+    }
+  ];
+
+  // Format today's stats
+  const todayStatCards = [
+    { 
+      label: "Today's Orders", 
+      value: todayStats.orders.toLocaleString(), 
+      change: '', 
+      trend: 'up' as const, 
+      icon: ShoppingBag 
+    },
+    { 
+      label: "Today's Revenue", 
+      value: `$${todayStats.revenue.toLocaleString(undefined, {maximumFractionDigits: 2})}`, 
+      change: '', 
+      trend: 'up' as const, 
+      icon: DollarSign 
+    },
+    { 
+      label: "New Customers", 
+      value: todayStats.new_customers.toLocaleString(), 
+      change: '', 
+      trend: 'up' as const, 
+      icon: Users 
+    }
+  ];
 
   return (
     <div className="space-y-6 from-orange-50 via-yellow-50 to-orange-50">
@@ -167,8 +269,15 @@ export function AdminMain() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {mockData.stats.map((stat, index) => (
-          <StatCard key={index} stat={stat} />
+        {statCards.map((stat, index) => (
+          <StatCard key={`stat-${index}`} stat={stat} />
+        ))}
+      </div>
+
+      {/* Today's Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {todayStatCards.map((stat, index) => (
+          <StatCard key={`today-stat-${index}`} stat={stat} />
         ))}
       </div>
 
@@ -177,25 +286,22 @@ export function AdminMain() {
         {/* Revenue Chart */}
         <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Revenue & Orders</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Weekly Revenue</h3>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                 <span className="text-sm text-gray-600">Revenue</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">Orders</span>
-              </div>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={mockData.revenueData}>
+            <AreaChart data={weeklyRevenue}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="date" stroke="#9ca3af" />
               <YAxis stroke="#9ca3af" />
               <Tooltip 
                 contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                formatter={(value) => [`$${value}`, 'Revenue']}
               />
               <Area 
                 type="monotone" 
@@ -205,52 +311,71 @@ export function AdminMain() {
                 fillOpacity={0.1}
                 strokeWidth={2}
               />
-              <Line 
-                type="monotone" 
-                dataKey="orders" 
-                stroke="#10b981" 
-                strokeWidth={2}
-              />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
         {/* Order Status Pie Chart */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Order Status</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">Order Status Distribution</h3>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
-                data={mockData.orderStatusData}
+                data={orderStatusDistribution}
                 cx="50%"
                 cy="50%"
                 innerRadius={40}
                 outerRadius={80}
                 paddingAngle={5}
-                dataKey="value"
+                dataKey="count"
+                nameKey="status"
               >
-                {mockData.orderStatusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                {orderStatusDistribution.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getStatusColor(entry.status)} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip formatter={(value) => [value, 'Orders']} />
             </PieChart>
           </ResponsiveContainer>
           <div className="mt-4 space-y-2">
-            {mockData.orderStatusData.map((item, index) => (
-              <div key={index} className="flex items-center justify-between">
+            {orderStatusDistribution.map((item, index) => (
+              <div key={`status-${index}`} className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <div 
                     className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: item.color }}
+                    style={{ backgroundColor: getStatusColor(item.status) }}
                   ></div>
-                  <span className="text-sm text-gray-600">{item.name}</span>
+                  <span className="text-sm text-gray-600">{item.status}</span>
                 </div>
-                <span className="text-sm font-medium text-gray-900">{item.value}</span>
+                <span className="text-sm font-medium text-gray-900">{item.count}</span>
               </div>
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Monthly Orders Chart */}
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Monthly Orders</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart data={monthlyOrders}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis dataKey="date" stroke="#9ca3af" />
+            <YAxis stroke="#9ca3af" />
+            <Tooltip 
+              contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+              formatter={(value) => [value, 'Orders']}
+            />
+            <Area 
+              type="monotone" 
+              dataKey="orders" 
+              stroke="#10b981" 
+              fill="#10b981" 
+              fillOpacity={0.1}
+              strokeWidth={2}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Tables Row */}
@@ -260,29 +385,35 @@ export function AdminMain() {
           <div className="p-6 border-b border-gray-100">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">Recent Orders</h3>
-              <button className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 text-sm font-medium">
+              <Link 
+                href={route('admin.orders.index')} 
+                className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+              >
                 <span>View All</span>
                 <ChevronRight className="w-4 h-4" />
-              </button>
+              </Link>
             </div>
           </div>
           <div className="divide-y divide-gray-100">
-            {mockData.recentOrders.map((order, index) => (
-              <div key={index} className="p-4 hover:bg-gray-50 transition-colors">
+            {recentOrders.map((order) => (
+              <div key={order.id} className="p-4 hover:bg-gray-50 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">
-                      <span className="font-medium text-gray-900">{order.id}</span>
+                      <span className="font-medium text-gray-900">#{order.id}</span>
                       <OrderStatusBadge status={order.status} />
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{order.customer} • {order.restaurant}</p>
-                    <p className="text-xs text-gray-500 mt-1">{order.time}</p>
+                    <p className="text-sm text-gray-600 mt-1">{order.customer_name} • {order.restaurant_name}</p>
+                    <p className="text-xs text-gray-500 mt-1">{order.created_at}</p>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <span className="font-semibold text-gray-900">{order.amount}</span>
-                    <button className="p-1 hover:bg-gray-200 rounded">
+                    <span className="font-semibold text-gray-900">${order.total_amount}</span>
+                    <Link 
+                      href={route('admin.orders.show', order.id)} 
+                      className="p-1 hover:bg-gray-200 rounded"
+                    >
                       <MoreHorizontal className="w-4 h-4 text-gray-400" />
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -295,35 +426,84 @@ export function AdminMain() {
           <div className="p-6 border-b border-gray-100">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">Top Restaurants</h3>
-              <button className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 text-sm font-medium">
+              <Link 
+                href={route('admin.restaurants.index')} 
+                className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+              >
                 <span>View All</span>
                 <ChevronRight className="w-4 h-4" />
-              </button>
+              </Link>
             </div>
           </div>
           <div className="divide-y divide-gray-100">
-            {mockData.topRestaurants.map((restaurant, index) => (
-              <div key={index} className="p-4 hover:bg-gray-50 transition-colors">
+            {topRestaurants.map((restaurant) => (
+              <div key={restaurant.id} className="p-4 hover:bg-gray-50 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
                       <span className="font-medium text-gray-900">{restaurant.name}</span>
                       <div className="flex items-center space-x-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        <span className="text-sm text-gray-600">{restaurant.rating}</span>
+                        <span className="text-sm text-gray-600">{restaurant.avg_rating}</span>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{restaurant.orders} orders</p>
+                    <p className="text-sm text-gray-600 mt-1">{restaurant.total_orders} orders</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900">{restaurant.revenue}</p>
-                    <button className="text-blue-600 hover:text-blue-700 text-sm mt-1">
+                    <p className="font-semibold text-gray-900">${restaurant.total_revenue.toFixed(2)}</p>
+                    <Link 
+                      href={route('admin.restaurants.show', restaurant.id)} 
+                      className="text-blue-600 hover:text-blue-700 text-sm mt-1"
+                    >
                       View Details
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Growth Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Orders Growth</h3>
+          <div className="flex items-end space-x-2">
+            <span className="text-3xl font-bold text-gray-900">
+              {growthMetrics.orders_growth >= 0 ? '+' : ''}{growthMetrics.orders_growth}%
+            </span>
+            <span className="text-sm text-gray-500 mb-1">vs last month</span>
+          </div>
+          <div className={`mt-2 flex items-center ${
+            growthMetrics.orders_growth >= 0 ? 'text-green-600' : 'text-red-600'
+          }`}>
+            <TrendingUp className={`w-5 h-5 ${
+              growthMetrics.orders_growth < 0 && 'rotate-180'
+            }`} />
+            <span className="ml-1 text-sm font-medium">
+              {growthMetrics.orders_growth >= 0 ? 'Increase' : 'Decrease'}
+            </span>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Growth</h3>
+          <div className="flex items-end space-x-2">
+            <span className="text-3xl font-bold text-gray-900">
+              {growthMetrics.revenue_growth >= 0 ? '+' : ''}{growthMetrics.revenue_growth}%
+            </span>
+            <span className="text-sm text-gray-500 mb-1">vs last month</span>
+          </div>
+          <div className={`mt-2 flex items-center ${
+            growthMetrics.revenue_growth >= 0 ? 'text-green-600' : 'text-red-600'
+          }`}>
+            <TrendingUp className={`w-5 h-5 ${
+              growthMetrics.revenue_growth < 0 && 'rotate-180'
+            }`} />
+            <span className="ml-1 text-sm font-medium">
+              {growthMetrics.revenue_growth >= 0 ? 'Increase' : 'Decrease'}
+            </span>
           </div>
         </div>
       </div>
@@ -375,4 +555,4 @@ export function AdminMain() {
       </div>
     </div>
   );
-}
+};

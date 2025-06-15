@@ -285,32 +285,39 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        \Log::info('Delete request received for user: '.$user->id);
+        
         // Authorization
         if (!auth()->user()->isAdmin()) {
-            return back()->with('error', 'Unauthorized action.');
+            \Log::warning('Unauthorized delete attempt');
+            return response()->json(['error' => 'Unauthorized action.'], 403);
         }
 
         // Prevent self-deletion
         if ($user->id === auth()->id()) {
-            return back()->with('error', 'You cannot delete your own account.');
+            \Log::warning('Self-deletion attempt');
+            return response()->json(['error' => 'You cannot delete your own account.'], 400);
         }
 
         // Check for existing orders
         if ($user->orders()->exists()) {
-            return back()->with('error', 'Cannot delete user with existing orders.');
+            \Log::warning('Attempt to delete user with orders');
+            return response()->json(['error' => 'Cannot delete user with existing orders.'], 400);
         }
 
         try {
+            \Log::info('Attempting to delete user');
             DB::transaction(function () use ($user) {
                 $user->addresses()->delete();
                 $user->delete();
             });
-
-            return redirect()->route('admin.users.index')
-                ->with('success', 'User deleted successfully');
-
+            
+            \Log::info('User deleted successfully');
+            return redirect()->route('admin.users.show')->with('success', 'User deleted successfully');
+            
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to delete user: ' . $e->getMessage());
+            \Log::error('Delete failed: '.$e->getMessage());
+            return response()->json(['error' => 'Failed to delete user: '.$e->getMessage()], 500);
         }
     }
 

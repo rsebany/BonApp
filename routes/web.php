@@ -82,15 +82,24 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     })->name('dashboard');
     
     // Admin order management routes
-    Route::resource('orders', AdminOrderController::class)->names([
-        'index' => 'orders.index',
-        'create' => 'orders.create',
-        'store' => 'orders.store',
-        'show' => 'orders.show',
-        'edit' => 'orders.edit',
-        'update' => 'orders.update',
-        'destroy' => 'orders.destroy',
-    ]);
+    Route::resource('orders', AdminOrderController::class)
+        ->except(['create', 'edit']) // If you're using Inertia, you might not need these
+        ->names([
+            'index' => 'orders.index',
+            'create' => 'orders.create',
+            'store' => 'orders.store',
+            'show' => 'orders.show',
+            'edit' => 'orders.edit',
+            'update' => 'orders.update',
+            'destroy' => 'orders.destroy',
+        ]);
+
+    // Additional route for fetching restaurant menu items
+    Route::get('/restaurants/{restaurant}/menu-items', function (\App\Models\Restaurant $restaurant) {
+        return response()->json(
+            $restaurant->menuItems()->select('id', 'item_name', 'price')->get()
+        );
+    })->name('restaurants.menu-items');
     
     // Additional order routes
     Route::post('orders/bulk-update', [AdminOrderController::class, 'bulkUpdate'])

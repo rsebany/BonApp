@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/layouts/Admin/AdminLayout';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -28,10 +28,13 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Driver } from '@/TypesGlobaux/user';
+import { toast } from 'sonner';
 
 interface Order {
   id: number;
   customer: {
+    last_name: string;
+    first_name: string;
     id: number;
     name: string;
     email: string;
@@ -104,6 +107,20 @@ export default function OrdersIndex({ orders, orderStatuses, restaurants, filter
   const [isExporting, setIsExporting] = useState(false);
   const [localFilters, setLocalFilters] = useState(filters);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Assuming flash messages are passed via props (e.g., as a prop named 'flash')
+    // If not, adjust according to your Inertia setup
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const flash = (window as any).flash || (window as any).props?.flash || (window as any).app?.props?.flash || {};
+    if (flash?.success) {
+      toast.success(flash.success);
+    }
+    if (flash?.error) {
+      toast.error(flash.error);
+    }
+  }, []);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -499,8 +516,7 @@ export default function OrdersIndex({ orders, orderStatuses, restaurants, filter
                     <TableCell>#{order.id}</TableCell>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{order.customer.name}</div>
-                        <div className="text-sm text-gray-500">{order.customer.email}</div>
+                        <div className="text-sm text-gray-500">{order.customer.first_name} {order.customer.last_name} </div>
                       </div>
                     </TableCell>
                     <TableCell>{order.restaurant.restaurant_name}</TableCell>

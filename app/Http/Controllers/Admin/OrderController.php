@@ -10,120 +10,141 @@ use App\Models\MenuItem;
 use App\Models\OrderStatus;
 use App\Models\Restaurant;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
+    use AuthorizesRequests;
     public function index(Request $request)
     {
-        // Ensure user is admin
-        if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
-        }
-
         $query = FoodOrder::with([
             'customer:id,first_name,last_name,email',
             'restaurant:id,restaurant_name',
-            'orderStatus:id,name as status',
+            'orderStatus:id,name',  // Changed from 'status' to 'name'
             'assignedDriver:id,first_name,last_name'
-        ]);
+        ])
+        ->latest();
 
         // Apply filters
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->whereHas('customer', function($q) use ($request) {
+                    $q->where('first_name', 'like', "%{$request->search}%")
+                    ->orWhere('last_name', 'like', "%{$request->search}%")
+                    ->orWhere('email', 'like', "%{$request->search}%");
+                })
+                ->orWhereHas('restaurant', function($q) use ($request) {
+                    $q->where('restaurant_name', 'like', "%{$request->search}%");
+                });
+            });
+        }
+
         if ($request->filled('status')) {
-            $query->where('order_status_id', $request->status);
+            $query->whereHas('orderStatus', function($q) use ($request) {
+                $q->where('name', $request->status);  // Changed from 'status' to 'name'
+            });
         }
 
         if ($request->filled('restaurant')) {
             $query->where('restaurant_id', $request->restaurant);
         }
 
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('id', 'like', "%{$search}%")
-                  ->orWhereHas('customer', function($q) use ($search) {
-                      $q->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('restaurant', function($q) use ($search) {
-                      $q->where('restaurant_name', 'like', "%{$search}%");
-                  });
-            });
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('order_date_time', [
+                $request->date_from,
+                $request->date_to
+            ]);
         }
 
         // Apply sorting
-        $sort = $request->get('sort', 'created_at');
-        $direction = $request->get('direction', 'desc');
-        $query->orderBy($sort, $direction);
+        if ($request->filled('sort') && $request->filled('direction')) {
+            $query->orderBy($request->sort, $request->direction);
+        }
 
-        $orders = $query->paginate(10)->withQueryString();
-
-        $orderStatuses = OrderStatus::select('id', 'name as status')->get();
-        $restaurants = Restaurant::select('id', 'restaurant_name')->get();
+        $orders = $query->paginate(15)
+            ->withQueryString()
+            ->through(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'customer' => [
+                        'id' => $order->customer->id,
+                        'first_name' => $order->customer->first_name,
+                        'last_name' => $order->customer->last_name,
+                        'email' => $order->customer->email,
+                    ],
+                    'restaurant' => [
+                        'id' => $order->restaurant->id,
+                        'restaurant_name' => $order->restaurant->restaurant_name,
+                    ],
+                    'order_status' => [
+                        'id' => $order->orderStatus->id,
+                        'status' => $order->orderStatus->name,  // Changed from status to name
+                    ],
+                    'assigned_driver' => $order->assignedDriver ? [
+                        'id' => $order->assignedDriver->id,
+                        'first_name' => $order->assignedDriver->first_name,
+                        'last_name' => $order->assignedDriver->last_name,
+                    ] : null,
+                    'total_amount' => number_format($order->total_amount, 2),
+                    'delivery_fee' => number_format($order->delivery_fee, 2),
+                    'created_at' => $order->created_at->toDateTimeString(),
+                    'status' => $order->orderStatus->name,  // Changed from status to name
+                ];
+            });
 
         return Inertia::render('admin/Orders/index', [
             'orders' => $orders,
-            'orderStatuses' => $orderStatuses,
-            'restaurants' => $restaurants,
-            'filters' => $request->only(['status', 'restaurant', 'date_from', 'date_to', 'search', 'sort', 'direction']),
+            'orderStatuses' => OrderStatus::select('id', 'name as status')->get(),  // Using alias here
+            'restaurants' => Restaurant::select('id', 'restaurant_name')->get(),
+            'filters' => $request->only(['search', 'status', 'restaurant', 'date_from', 'date_to', 'sort', 'direction']),
             'user' => [
-                'role' => auth()->user()->role
-            ]
+                'role' => auth()->user()->role,
+            ],
         ]);
     }
 
-        public function show($id, Request $request)
-        {
-            // Ensure user is admin
-            if (auth()->user()->role !== 'admin') {
-                return redirect('/dashboard');
-            }
-
-            $order = FoodOrder::with([
-                'customer:id,first_name,last_name,email,phone',
-                'restaurant:id,restaurant_name',
-                'restaurant.address:id,address_line1,address_line2,city,region,postal_code',
-                'restaurant.address.country:id,country_name',
-                'orderStatus:id,name as status',
-                'assignedDriver:id,first_name,last_name,phone',
-                'customerAddress:id,address_line1,address_line2,city,region,postal_code',
-                'customerAddress.country:id,country_name',
-                'orderItems.menuItem:id,item_name,price'
-            ])->findOrFail($id);
-
-            // Get available drivers for assignment
-            $availableDrivers = User::select('id', 'first_name', 'last_name')
-                ->where('role', 'driver')
-                ->where(function($query) use ($order) {
-                    $query->where('is_available', true)
-                        ->orWhere('id', $order->assigned_driver_id);
-                })
-                ->get();
-
-            // Get all order statuses
-            $orderStatuses = OrderStatus::select('id', 'name as status')->get();
-
-            // Get the filters from the request (passed from index)
-            $filters = $request->only(['status', 'restaurant', 'date_from', 'date_to', 'search', 'sort', 'direction']);
-
-            return Inertia::render('admin/Orders/show', [
-                'order' => new OrderResource($order),
-                'availableDrivers' => $availableDrivers,
-                'orderStatuses' => $orderStatuses,
-                'filters' => $filters, // Pass along the filters
-            ]);
+    public function show($id, Request $request)
+    {
+        if (auth()->user()->role !== 'admin') {
+            return redirect('/dashboard');
         }
+
+        $order = FoodOrder::with([
+            'customer:id,first_name,last_name,email,phone',
+            'restaurant:id,restaurant_name',
+            'restaurant.address:id,address_line1,address_line2,city,region,postal_code',
+            'restaurant.address.country:id,country_name',
+            'orderStatus:id,name as status', 
+            'assignedDriver:id,first_name,last_name,phone',
+            'customerAddress:id,address_line1,address_line2,city,region,postal_code',
+            'customerAddress.country:id,country_name',
+            'orderItems.menuItem:id,item_name,price'
+        ])->findOrFail($id);
+
+        // Get available drivers
+        $availableDrivers = User::select('id', 'first_name', 'last_name', 'phone')
+            ->where('role', 'driver')
+            ->where(function($query) use ($order) {
+                $query->where('is_available', true)
+                    ->orWhere('id', $order->assigned_driver_id);
+            })
+            ->get();
+
+        // Updated to only select existing columns
+        $orderStatuses = OrderStatus::select('id', 'name')->get();
+
+        return Inertia::render('admin/Orders/show', [
+            'order' => $order,
+            'availableDrivers' => $availableDrivers,
+            'orderStatuses' => $orderStatuses,
+            'filters' => $request->only(['status', 'restaurant', 'date_from', 'date_to', 'search']),
+        ]);
+    }
 
     public function create()
     {
@@ -132,17 +153,52 @@ class OrderController extends Controller
             return redirect('/dashboard');
         }
 
-        $customers = User::select('id', 'first_name', 'last_name', 'email')
+        $customers = User::with(['addresses'])
             ->where('role', 'customer')
             ->orderBy('first_name')
-            ->get();
+            ->get()
+            ->map(function ($customer) {
+                return [
+                    'id' => $customer->id,
+                    'first_name' => $customer->first_name,
+                    'last_name' => $customer->last_name,
+                    'email' => $customer->email,
+                    'addresses' => $customer->addresses->map(function ($address) {
+                        return [
+                            'id' => $address->id,
+                            'street_number' => $address->street_number,
+                            'address_line1' => $address->address_line1,
+                            'city' => $address->city,
+                            'region' => $address->region,
+                            'postal_code' => $address->postal_code,
+                        ];
+                    })
+                ];
+            });
 
-        $restaurants = Restaurant::select('id', 'restaurant_name', 'address_id')
-            ->with(['address' => function($query) {
-                $query->select('id', 'street_number', 'address_line1', 'city', 'region', 'postal_code');
-            }])
+        $restaurants = Restaurant::with(['address', 'menuItems'])
             ->orderBy('restaurant_name')
-            ->get();
+            ->get()
+            ->map(function ($restaurant) {
+                return [
+                    'id' => $restaurant->id,
+                    'restaurant_name' => $restaurant->restaurant_name,
+                    'address' => $restaurant->address ? [
+                        'street_number' => $restaurant->address->street_number,
+                        'address_line1' => $restaurant->address->address_line1,
+                        'city' => $restaurant->address->city,
+                        'region' => $restaurant->address->region,
+                        'postal_code' => $restaurant->address->postal_code,
+                    ] : null,
+                    'menu_items' => $restaurant->menuItems->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'item_name' => $item->item_name,
+                            'price' => $item->price,
+                        ];
+                    })
+                ];
+            });
 
         $orderStatuses = OrderStatus::select('id', 'name as status')->get();
 
@@ -161,19 +217,15 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
-        // Ensure user is admin
-        if (auth()->user()->role !== 'admin') {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
-        $validatedData = $request->validate([
+        // Validate the request
+        $validated = $request->validate([
             'customer_id' => 'required|exists:users,id',
             'restaurant_id' => 'required|exists:restaurants,id',
-            'customer_address_id' => 'required|exists:customer_addresses,id',
+            'customer_address_id' => 'required|exists:addresses,id',
             'order_status_id' => 'required|exists:order_statuses,id',
             'assigned_driver_id' => 'nullable|exists:users,id',
             'order_date_time' => 'required|date',
-            'requested_delivery_date_time' => 'nullable|date',
+            'requested_delivery_date_time' => 'required|date|after:order_date_time',
             'delivery_fee' => 'required|numeric|min:0',
             'total_amount' => 'required|numeric|min:0',
             'items' => 'required|array|min:1',
@@ -183,36 +235,25 @@ class OrderController extends Controller
             'items.*.subtotal' => 'required|numeric|min:0',
         ]);
 
-        DB::beginTransaction();
         try {
-            // If assigning a driver, verify they are available
-            if ($validatedData['assigned_driver_id']) {
-                $driver = User::where('id', $validatedData['assigned_driver_id'])
-                    ->where('role', 'driver')
-                    ->where('is_available', true)
-                    ->first();
-
-                if (!$driver) {
-                    throw new \Exception('Selected driver is not available');
-                }
-            }
+            DB::beginTransaction();
 
             // Create the order
             $order = FoodOrder::create([
-                'customer_id' => $validatedData['customer_id'],
-                'restaurant_id' => $validatedData['restaurant_id'],
-                'customer_address_id' => $validatedData['customer_address_id'],
-                'order_status_id' => $validatedData['order_status_id'],
-                'assigned_driver_id' => $validatedData['assigned_driver_id'],
-                'order_date_time' => $validatedData['order_date_time'],
-                'requested_delivery_date_time' => $validatedData['requested_delivery_date_time'],
-                'delivery_fee' => $validatedData['delivery_fee'],
-                'total_amount' => $validatedData['total_amount'],
+                'customer_id' => $validated['customer_id'],
+                'restaurant_id' => $validated['restaurant_id'],
+                'customer_address_id' => $validated['customer_address_id'],
+                'order_status_id' => $validated['order_status_id'],
+                'assigned_driver_id' => $validated['assigned_driver_id'],
+                'order_date_time' => $validated['order_date_time'],
+                'requested_delivery_date_time' => $validated['requested_delivery_date_time'],
+                'delivery_fee' => $validated['delivery_fee'],
+                'total_amount' => $validated['total_amount'],
             ]);
 
-            // Create order items
-            foreach ($validatedData['items'] as $item) {
-                $order->orderItems()->create([
+            // Add order items
+            foreach ($validated['items'] as $item) {
+                $order->items()->create([
                     'menu_item_id' => $item['menu_item_id'],
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
@@ -220,64 +261,79 @@ class OrderController extends Controller
                 ]);
             }
 
-            // If assigning a driver, mark them as unavailable
-            if ($validatedData['assigned_driver_id']) {
-                User::where('id', $validatedData['assigned_driver_id'])
-                    ->update(['is_available' => false]);
-            }
-
             DB::commit();
 
             return redirect()->route('admin.orders.index')
                 ->with('success', 'Order created successfully');
         } catch (\Exception $e) {
-            DB::rollback();
-            return back()->withErrors(['error' => $e->getMessage() ?: 'Failed to create order']);
+            DB::rollBack();
+            return back()
+                ->with('error', 'Failed to create order: ' . $e->getMessage())
+                ->withInput();
         }
     }
 
     public function edit($id)
     {
-        // Ensure user is admin
-        if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+        try {
+            $order = FoodOrder::with([
+                'customer:id,first_name,last_name,email',
+                'restaurant:id,restaurant_name,address_id',
+                'restaurant.address:id,street_number,address_line1,city,region,postal_code',
+                'orderStatus:id,name as status',
+                'assignedDriver:id,first_name,last_name,is_available',
+                'customerAddress:id,address_line1,address_line2,city,region,postal_code',
+                'orderItems.menuItem:id,item_name,price'
+            ])->findOrFail($id);
+
+            $this->authorize('update', $order);
+
+            $customers = User::select('id', 'first_name', 'last_name', 'email')
+                ->where('role', 'customer')
+                ->orderBy('first_name')
+                ->get();
+
+            $restaurants = Restaurant::select('id', 'restaurant_name')
+                ->orderBy('restaurant_name')
+                ->get();
+
+            $orderStatuses = OrderStatus::select('id', 'name as status')->get();
+
+            $drivers = User::select('id', 'first_name', 'last_name', 'is_available')
+                ->where('role', 'driver')
+                ->where(function($query) use ($order) {
+                    $query->where('is_available', true)
+                        ->orWhere('id', $order->assigned_driver_id);
+                })
+                ->get();
+
+            return Inertia::render('admin/Orders/edit', [
+                'order' => $order,
+                'customers' => $customers,
+                'restaurants' => $restaurants,
+                'orderStatuses' => $orderStatuses,
+                'drivers' => $drivers,
+            ]);
+
+        } catch (ModelNotFoundException $e) {
+            abort(404, 'Order not found');
+        } catch (\Exception $e) {
+            Log::error('Error fetching order for edit: ' . $e->getMessage());
+            abort(500, 'Failed to load order data');
         }
-
-        $order = FoodOrder::with([
-            'customer:id,first_name,last_name,email',
-            'restaurant:id,restaurant_name',
-            'orderStatus:id,name as status',
-            'assignedDriver:id,first_name,last_name',
-            'customerAddress:id,address_line1,address_line2,city,region,postal_code',
-        ])->findOrFail($id);
-
-        $customers = User::select('id', 'first_name', 'last_name', 'email')
-            ->where('role', 'customer')
-            ->orderBy('first_name')
-            ->get();
-
-        $restaurants = Restaurant::select('id', 'restaurant_name')
-            ->orderBy('restaurant_name')
-            ->get();
-
-        $orderStatuses = OrderStatus::select('id', 'name as status')->get();
-
-        $drivers = User::select('id', 'first_name', 'last_name')
-            ->where('role', 'driver')
-            ->where(function($query) use ($order) {
-                $query->where('is_available', true)
-                      ->orWhere('id', $order->assigned_driver_id);
-            })
-            ->get();
-
-        return Inertia::render('admin/Orders/edit', [
-            'order' => new OrderResource($order),
-            'customers' => $customers,
-            'restaurants' => $restaurants,
-            'orderStatuses' => $orderStatuses,
-            'drivers' => $drivers,
-        ]);
     }
+
+// Consider adding a scope for available drivers
+public function scopeAvailableDrivers($query, $exceptDriverId = null)
+{
+    $query->where('role', 'driver')
+          ->where(function($q) use ($exceptDriverId) {
+              $q->where('is_available', true);
+              if ($exceptDriverId) {
+                  $q->orWhere('id', $exceptDriverId);
+              }
+          });
+}
 
     public function update(Request $request, $id)
     {

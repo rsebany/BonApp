@@ -7,16 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import axios from 'axios';
-
 
 interface OrderPayload {
-  [key: string]: string | number | null | Array<{
-    menu_item_id: string;
-    quantity: number;
-    price: string;
-    subtotal: string;
-  }>;
   customer_id: string;
   restaurant_id: string;
   customer_address_id: string;
@@ -76,13 +68,30 @@ interface Restaurant {
   menu_items: MenuItem[];
 }
 
+interface OrderStatus {
+  id: number;
+  status: string;
+}
+
+interface Driver {
+  id: number;
+  first_name: string;
+  last_name: string;
+}
+
 interface OrderCreateProps {
   customers: Customer[];
   restaurants: Restaurant[];
-  menu_items: MenuItem[];
+  orderStatuses: OrderStatus[];
+  drivers: Driver[];
 }
 
-export default function OrderCreate({ customers, restaurants, menu_items: initialMenuItems }: OrderCreateProps) {
+export default function OrderCreate({ 
+  customers, 
+  restaurants, 
+  orderStatuses,
+  drivers 
+}: OrderCreateProps) {
   const [formData, setFormData] = useState<OrderPayload>({
     customer_id: '',
     restaurant_id: '',
@@ -90,89 +99,50 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
     order_status_id: '',
     assigned_driver_id: null,
     order_date_time: new Date().toISOString(),
-    requested_delivery_date_time: '',
-    delivery_fee: '',
-    total_amount: '',
+    requested_delivery_date_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    delivery_fee: '5.00',
+    total_amount: '0.00',
     items: [],
   });
 
-  
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
-  const [loadingMenuItems, setLoadingMenuItems] = useState(false);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [loadingMenuItems] = useState(false);
   const [customerAddresses, setCustomerAddresses] = useState<Address[]>([]);
 
-  // Fetch menu items when restaurant changes
   useEffect(() => {
     if (formData.restaurant_id) {
-        console.log('Selected restaurant ID:', formData.restaurant_id);
-        setLoadingMenuItems(true);
-        setMenuItems([]);
-        
-        // Simple API call since headers are set globally
-        axios.get(`/admin/api/menu-items?restaurant_id=${formData.restaurant_id}`)
-            .then(response => {
-                console.log('Menu items response:', response.data);
-                setMenuItems(response.data.data || response.data);
-                setLoadingMenuItems(false);
-            })
-            .catch(error => {
-                console.error('Error fetching menu items:', error);
-                console.error('Error details:', error.response?.data);
-                setMenuItems([]);
-                setLoadingMenuItems(false);
-            });
+      const selectedRestaurant = restaurants.find(r => r.id === Number(formData.restaurant_id));
+      setMenuItems(selectedRestaurant?.menu_items || []);
     } else {
-        setMenuItems([]);
-        setLoadingMenuItems(false);
+      setMenuItems([]);
     }
-}, [formData.restaurant_id]);
+  }, [formData.restaurant_id, restaurants]);
 
-  // Update customer addresses when customer changes
   useEffect(() => {
     if (formData.customer_id) {
       const customer = customers.find(c => c.id === Number(formData.customer_id));
       setCustomerAddresses(customer?.addresses || []);
-      // Reset address selection when customer changes
-      setFormData(prev => ({ ...prev, customer_address_id: '' }));
+      setFormData(prev => ({ 
+        ...prev, 
+        customer_address_id: customer?.addresses?.[0]?.id.toString() || '' 
+      }));
     } else {
       setCustomerAddresses([]);
+      setFormData(prev => ({ ...prev, customer_address_id: '' }));
     }
   }, [formData.customer_id, customers]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setErrors({});
-
-    try {
-      await router.post(route('admin.orders.store'), formData, {
-        onSuccess: () => {
-          toast.success('Order created successfully');
-          router.visit(route('admin.orders.index'));
-        },
-        onError: (errors) => {
-          setErrors(errors as Record<string, string>);
-          toast.error('Failed to create order');
-        },
-        onFinish: () => setIsSubmitting(false),
-      });
-    } catch (error) {
-      console.error('Error creating order:', error);
-      toast.error('An unexpected error occurred');
-      setIsSubmitting(false);
-    }
-  };
 
   const handleSelectChange = (field: keyof OrderPayload, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
-      ...(field === 'restaurant_id' && { items: [] })
+      ...(field === 'restaurant_id' && { items: [] }) // Clear items when restaurant changes
     }));
   };
 
+  
   const handleAddItem = () => {
     setFormData(prev => ({
       ...prev,
@@ -184,16 +154,72 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
   };
 
   const handleRemoveItem = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      items: prev.items.filter((_, i) => i !== index),
-    }));
+    setFormData(prev => {
+      const newItems = prev.items.filter((_, i) => i !== index);
+      const subtotal = newItems.reduce((sum, item) => sum + Number(item.subtotal), 0);
+      const deliveryFee = Number(prev.delivery_fee) || 0;
+      const totalAmount = (subtotal + deliveryFee).toFixed(2);
+      
+      return {
+        ...prev,
+        items: newItems,
+        total_amount: totalAmount,
+      };
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setErrors({});
+
+    try {
+      const items = formData.items.map(item => ({
+        ...item,
+        menu_item_id: Number(item.menu_item_id),
+        quantity: Number(item.quantity),
+        price: Number(item.price),
+        subtotal: Number(item.subtotal),
+      }));
+
+      const payload = {
+        ...formData,
+        customer_id: Number(formData.customer_id),
+        restaurant_id: Number(formData.restaurant_id),
+        customer_address_id: Number(formData.customer_address_id),
+        order_status_id: Number(formData.order_status_id),
+        assigned_driver_id: formData.assigned_driver_id ? Number(formData.assigned_driver_id) : null,
+        delivery_fee: Number(formData.delivery_fee),
+        total_amount: Number(formData.total_amount),
+        items: items,
+      };
+
+      router.post(route('admin.orders.store'), payload, {
+        preserveScroll: true,
+        onSuccess: () => {
+          toast.success('Order created successfully');
+          router.visit(route('admin.orders.index'), {
+            only: ['orders'], // Only reload the orders data
+            preserveScroll: true,
+          });
+        },
+        onError: (errors) => {
+          setErrors(errors);
+          toast.error('Failed to create order');
+        },
+        onFinish: () => setIsSubmitting(false),
+      });
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast.error('An unexpected error occurred');
+      setIsSubmitting(false);
+    }
   };
 
   const handleItemChange = (index: number, field: string, value: string | number) => {
     setFormData(prev => {
       const newItems = [...prev.items];
-      newItems[index] = { ...newItems[index], [field]: value };
+      newItems[index] = { ...newItems[index], [field]: value.toString() };
 
       // Calculate subtotal if quantity or price changes
       if (field === 'quantity' || field === 'price') {
@@ -215,13 +241,11 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
     });
   };
 
-
   return (
     <AdminLayout title="Orders Management">
       <Head title="Create Order" />
 
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold py-2">Create Order</h1>
@@ -235,7 +259,6 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
           </Button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card>
             <CardHeader>
@@ -244,17 +267,18 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
             <CardContent className="space-y-4">
               {/* Customer Selection */}
               <div className="space-y-2">
-                <Label htmlFor="customer_id">Customer</Label>
+                <Label htmlFor="customer_id">Customer *</Label>
                 <select
                   id="customer_id"
                   value={formData.customer_id}
                   onChange={(e) => handleSelectChange('customer_id', e.target.value)}
                   className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  required
                 >
                   <option value="">Select a customer</option>
                   {customers.map(customer => (
                     <option key={customer.id} value={customer.id}>
-                      {customer.first_name} {customer.last_name} - ({customer.email})
+                      {customer.first_name} {customer.last_name} ({customer.email})
                     </option>
                   ))}
                 </select>
@@ -266,12 +290,13 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
               {/* Customer Address Selection */}
               {customerAddresses.length > 0 && (
                 <div className="space-y-2">
-                  <Label htmlFor="customer_address_id">Delivery Address</Label>
+                  <Label htmlFor="customer_address_id">Delivery Address *</Label>
                   <select
                     id="customer_address_id"
                     value={formData.customer_address_id}
                     onChange={(e) => handleSelectChange('customer_address_id', e.target.value)}
                     className="w-full rounded-md border border-gray-300 px-3 py-2"
+                    required
                   >
                     <option value="">Select a delivery address</option>
                     {customerAddresses.map(address => (
@@ -294,30 +319,18 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
 
               {/* Restaurant Selection */}
               <div className="space-y-2">
-                <Label htmlFor="restaurant_id">Restaurant</Label>
+                <Label htmlFor="restaurant_id">Restaurant *</Label>
                 <select
                   id="restaurant_id"
                   value={formData.restaurant_id}
                   onChange={(e) => handleSelectChange('restaurant_id', e.target.value)}
                   className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  required
                 >
                   <option value="">Select a restaurant</option>
                   {restaurants.map(restaurant => (
                     <option key={restaurant.id} value={restaurant.id}>
-                      {restaurant.restaurant_name} -{" "}
-                      {restaurant.address ? (
-                        [
-                          restaurant.address.street_number,
-                          restaurant.address.address_line1,
-                          restaurant.address.city,
-                          restaurant.address.region,
-                          restaurant.address.postal_code
-                        ]
-                          .filter(Boolean)
-                          .join(", ")
-                      ) : (
-                        "Address not available"
-                      )}
+                      {restaurant.restaurant_name} - {restaurant.address?.city || 'No address'}
                     </option>
                   ))}
                 </select>
@@ -326,26 +339,91 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
                 )}
               </div>
 
+              {/* Order Status */}
+              <div className="space-y-2">
+                <Label htmlFor="order_status_id">Order Status *</Label>
+                <select
+                  id="order_status_id"
+                  value={formData.order_status_id}
+                  onChange={(e) => handleSelectChange('order_status_id', e.target.value)}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  required
+                >
+                  <option value="">Select an order status</option>
+                  {orderStatuses.map(status => (
+                    <option key={status.id} value={status.id}>
+                      {status.status}
+                    </option>
+                  ))}
+                </select>
+                {errors.order_status_id && (
+                  <p className="text-sm text-red-500">{errors.order_status_id}</p>
+                )}
+              </div>
+
+              {/* Assigned Driver */}
+              <div className="space-y-2">
+                <Label htmlFor="assigned_driver_id">Assigned Driver</Label>
+                <select
+                  id="assigned_driver_id"
+                  value={formData.assigned_driver_id || ''}
+                  onChange={(e) => handleSelectChange('assigned_driver_id', e.target.value || '')}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                >
+                  <option value="">No driver assigned</option>
+                  {drivers.map(driver => (
+                    <option key={driver.id} value={driver.id}>
+                      {driver.first_name} {driver.last_name}
+                    </option>
+                  ))}
+                </select>
+                {errors.assigned_driver_id && (
+                  <p className="text-sm text-red-500">{errors.assigned_driver_id}</p>
+                )}
+              </div>
+
+              {/* Delivery Date/Time */}
+              <div className="space-y-2">
+                <Label htmlFor="requested_delivery_date_time">Requested Delivery Date/Time</Label>
+                <Input
+                  id="requested_delivery_date_time"
+                  type="datetime-local"
+                  value={formData.requested_delivery_date_time.substring(0, 16)}
+                  onChange={(e) => handleSelectChange('requested_delivery_date_time', e.target.value)}
+                />
+                {errors.requested_delivery_date_time && (
+                  <p className="text-sm text-red-500">{errors.requested_delivery_date_time}</p>
+                )}
+              </div>
+
               {/* Order Items */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label>Order Items</Label>
+                  <Label>Order Items *</Label>
                   <Button 
                     type="button" 
                     onClick={handleAddItem} 
                     variant="outline" 
                     size="sm"
-                    disabled={!formData.restaurant_id}
+                    disabled={!formData.restaurant_id || loadingMenuItems}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Item
                   </Button>
                 </div>
 
+                {formData.items.length === 0 && (
+                  <div className="text-center py-4 text-gray-500">
+                    {formData.restaurant_id 
+                      ? 'Add items to this order' 
+                      : 'Select a restaurant to add items'}
+                  </div>
+                )}
+
                 {formData.items.map((item, index) => (
                   <div key={index} className="flex items-end gap-4 p-4 border rounded-lg">
-                    <div className="flex-1 space-y-3">
-                      <Label>Menu Item</Label>
+                    <div className="flex-1 space-y-2">
+                      <Label>Menu Item *</Label>
                       <select
                         value={item.menu_item_id}
                         onChange={(e) => {
@@ -356,44 +434,31 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
                           }
                         }}
                         className="w-full rounded-md border border-gray-300 px-3 py-2"
-                        disabled={!formData.restaurant_id || loadingMenuItems}
+                        required
                       >
-                        <option value="">
-                          {loadingMenuItems ? "Loading..." : "Select an item"}
-                        </option>
+                        <option value="">Select an item</option>
                         {menuItems.map(menuItem => (
                           <option key={menuItem.id} value={menuItem.id}>
                             {menuItem.item_name} - ${Number(menuItem.price).toFixed(2)}
                           </option>
                         ))}
                       </select>
-                      
-                      {formData.restaurant_id && (
-                        <div className="mt-2 text-sm">
-                          {loadingMenuItems ? (
-                            <span className="text-blue-600">Loading menu items...</span>
-                          ) : menuItems.length === 0 ? (
-                            <span className="text-amber-600">No menu items available for this restaurant</span>
-                          ) : (
-                            <span className="text-green-600">{menuItems.length} items available</span>
-                          )}
-                        </div>
-                      )}
                     </div>
 
                     <div className="w-24 space-y-2">
-                      <Label>Quantity</Label>
+                      <Label>Quantity *</Label>
                       <Input
                         type="number"
                         min="1"
                         value={item.quantity}
                         onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                         className="w-full"
+                        required
                       />
                     </div>
 
                     <div className="w-32 space-y-2">
-                      <Label>Price</Label>
+                      <Label>Price *</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -401,6 +466,7 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
                         value={item.price}
                         onChange={(e) => handleItemChange(index, 'price', e.target.value)}
                         className="w-full"
+                        required
                       />
                     </div>
 
@@ -408,7 +474,7 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
                       <Label>Subtotal</Label>
                       <Input
                         type="text"
-                        value={item.subtotal}
+                        value={`$${item.subtotal}`}
                         readOnly
                         className="w-full bg-gray-50"
                       />
@@ -433,7 +499,7 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
 
               {/* Delivery Fee */}
               <div className="space-y-2">
-                <Label htmlFor="delivery_fee">Delivery Fee</Label>
+                <Label htmlFor="delivery_fee">Delivery Fee *</Label>
                 <Input
                   id="delivery_fee"
                   type="number"
@@ -447,6 +513,7 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
                     const deliveryFee = Number(e.target.value) || 0;
                     handleSelectChange('total_amount', (subtotal + deliveryFee).toFixed(2));
                   }}
+                  required
                 />
                 {errors.delivery_fee && (
                   <p className="text-sm text-red-500">{errors.delivery_fee}</p>
@@ -459,9 +526,9 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
                 <Input
                   id="total_amount"
                   type="text"
-                  value={formData.total_amount}
+                  value={`$${formData.total_amount}`}
                   readOnly
-                  className="bg-gray-50"
+                  className="bg-gray-50 font-bold"
                 />
                 {errors.total_amount && (
                   <p className="text-sm text-red-500">{errors.total_amount}</p>
@@ -469,12 +536,13 @@ export default function OrderCreate({ customers, restaurants, menu_items: initia
               </div>
 
               {/* Submit Button */}
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Creating...' : 'Create Order'}
-              </Button>
+              <div className="pt-4">
+                <Button type="submit" disabled={isSubmitting || formData.items.length === 0}>
+                  {isSubmitting ? 'Creating...' : 'Create Order'}
+                </Button>
+              </div>
             </CardContent>
           </Card>
-          
         </form>
       </div>
     </AdminLayout>

@@ -57,15 +57,14 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 
-    /* Airbnb-inspired colors */
-    --color-airbnb-red: #FF385C;
-    --color-airbnb-pink: #FF5A5F;
-    --color-airbnb-orange: #FF5A5F;
-    --color-airbnb-yellow: #FFB400;
-    --color-airbnb-dark: #222222;
-    --color-airbnb-light: #FFFFFF;
-    --color-airbnb-gray: #717171;
-    --color-airbnb-light-gray: #EBEBEB;
+    /* Green-inspired colors */
+    --color-green-primary: #00A699;
+    --color-green-secondary: #008489;
+    --color-green-accent: #26C0A2;
+    --color-green-dark: #222222;
+    --color-green-light: #FFFFFF;
+    --color-green-gray: #717171;
+    --color-green-light-gray: #EBEBEB;
 }
 
 @layer base {
@@ -74,81 +73,81 @@
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-airbnb-light-gray, currentColor);
+        border-color: var(--color-green-light-gray, currentColor);
     }
 }
 
 :root {
-    /* Airbnb-inspired Color Palette */
+    /* Green-inspired Color Palette */
     --background: #FFFFFF;
     --foreground: #222222;
     --card: #FFFFFF;
     --card-foreground: #222222;
     --popover: #FFFFFF;
     --popover-foreground: #222222;
-    --primary: #FF385C; /* Airbnb red */
+    --primary: #00A699; /* Primary green */
     --primary-foreground: #FFFFFF;
     --secondary: #EBEBEB;
     --secondary-foreground: #222222;
     --muted: #F7F7F7;
     --muted-foreground: #717171;
-    --accent: #FF5A5F; /* Airbnb pink */
+    --accent: #26C0A2; /* Accent green */
     --accent-foreground: #FFFFFF;
     --destructive: #E53E3E;
     --destructive-foreground: #FFFFFF;
     --border: #EBEBEB;
     --input: #FFFFFF;
-    --ring: #FF385C;
-    --chart-1: #FF385C;
-    --chart-2: #FF5A5F;
-    --chart-3: #FFB400;
-    --chart-4: #00A699;
+    --ring: #00A699;
+    --chart-1: #00A699;
+    --chart-2: #008489;
+    --chart-3: #26C0A2;
+    --chart-4: #FFB400;
     --chart-5: #FC642D;
     --radius: 0.75rem;
     --sidebar: #FFFFFF;
     --sidebar-foreground: #222222;
-    --sidebar-primary: #FF385C;
+    --sidebar-primary: #00A699;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #FF5A5F;
+    --sidebar-accent: #26C0A2;
     --sidebar-accent-foreground: #222222;
     --sidebar-border: #EBEBEB;
-    --sidebar-ring: #FF385C;
+    --sidebar-ring: #00A699;
 }
 
 .dark {
-    /* Dark mode with Airbnb-inspired colors */
+    /* Dark mode with green-inspired colors */
     --background: #121212;
     --foreground: #FFFFFF;
     --card: #1E1E1E;
     --card-foreground: #FFFFFF;
     --popover: #1E1E1E;
     --popover-foreground: #FFFFFF;
-    --primary: #FF385C;
+    --primary: #00A699;
     --primary-foreground: #FFFFFF;
     --secondary: #2D2D2D;
     --secondary-foreground: #FFFFFF;
     --muted: #2D2D2D;
     --muted-foreground: #A1A1A1;
-    --accent: #FF5A5F;
+    --accent: #26C0A2;
     --accent-foreground: #FFFFFF;
     --destructive: #E53E3E;
     --destructive-foreground: #FFFFFF;
     --border: #2D2D2D;
     --input: #1E1E1E;
-    --ring: #FF385C;
-    --chart-1: #FF385C;
-    --chart-2: #FF5A5F;
-    --chart-3: #FFB400;
-    --chart-4: #00A699;
+    --ring: #00A699;
+    --chart-1: #00A699;
+    --chart-2: #008489;
+    --chart-3: #26C0A2;
+    --chart-4: #FFB400;
     --chart-5: #FC642D;
     --sidebar: #1E1E1E;
     --sidebar-foreground: #FFFFFF;
-    --sidebar-primary: #FF385C;
+    --sidebar-primary: #00A699;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #FF5A5F;
+    --sidebar-accent: #26C0A2;
     --sidebar-accent-foreground: #FFFFFF;
     --sidebar-border: #2D2D2D;
-    --sidebar-ring: #FF385C;
+    --sidebar-ring: #00A699;
 }
 
 @layer base {
@@ -163,7 +162,7 @@
     }
 }
 
-/* Airbnb-Inspired Components */
+/* Green-Inspired Components */
 @layer components {
     /* Header & Navigation */
     .navbar {
@@ -178,7 +177,7 @@
         @apply text-primary;
     }
 
-    /* Buttons - Airbnb style */
+    /* Buttons - green style */
     .btn-primary {
         @apply bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-semibold transition-all duration-200;
     }
@@ -195,7 +194,7 @@
         @apply border border-primary text-primary hover:bg-primary/10 px-5 py-2.5 rounded-lg font-semibold transition-all duration-200;
     }
 
-    /* Cards - Airbnb style */
+    /* Cards - green style */
     .food-card {
         @apply bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300;
     }
@@ -237,7 +236,7 @@
         @apply bg-red-100 text-red-800;
     }
 
-    /* Forms - Airbnb style */
+    /* Forms - green style */
     .form-input {
         @apply w-full px-4 py-2.5 border border-border rounded-lg bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent transition-all duration-200;
     }
@@ -250,7 +249,7 @@
         @apply text-red-500 text-sm mt-1;
     }
 
-    /* Hero Section - Airbnb style */
+    /* Hero Section - green style */
     .hero-section {
         @apply bg-gradient-to-r from-primary/10 via-background to-primary/5 py-16;
     }
@@ -276,7 +275,7 @@
         @apply font-medium text-foreground text-center;
     }
 
-    /* Search Bar - Airbnb style */
+    /* Search Bar - green style */
     .search-bar {
         @apply relative w-full max-w-2xl mx-auto;
     }
@@ -342,65 +341,57 @@
         @apply animate-in zoom-in-95 duration-200;
     }
 
-    /* Utility Classes for Airbnb Colors */
-    .text-airbnb-red {
-        color: var(--color-airbnb-red);
+    /* Utility Classes for Green Colors */
+    .text-green-primary {
+        color: var(--color-green-primary);
     }
     
-    .text-airbnb-pink {
-        color: var(--color-airbnb-pink);
+    .text-green-secondary {
+        color: var(--color-green-secondary);
     }
     
-    .text-airbnb-orange {
-        color: var(--color-airbnb-orange);
+    .text-green-accent {
+        color: var(--color-green-accent);
     }
     
-    .text-airbnb-yellow {
-        color: var(--color-airbnb-yellow);
+    .bg-green-primary {
+        background-color: var(--color-green-primary);
     }
     
-    .bg-airbnb-red {
-        background-color: var(--color-airbnb-red);
+    .bg-green-secondary {
+        background-color: var(--color-green-secondary);
     }
     
-    .bg-airbnb-pink {
-        background-color: var(--color-airbnb-pink);
+    .bg-green-accent {
+        background-color: var(--color-green-accent);
     }
     
-    .bg-airbnb-orange {
-        background-color: var(--color-airbnb-orange);
+    .border-green-primary {
+        border-color: var(--color-green-primary);
     }
     
-    .bg-airbnb-yellow {
-        background-color: var(--color-airbnb-yellow);
-    }
-    
-    .border-airbnb-red {
-        border-color: var(--color-airbnb-red);
-    }
-    
-    .border-airbnb-pink {
-        border-color: var(--color-airbnb-pink);
+    .border-green-secondary {
+        border-color: var(--color-green-secondary);
     }
 
-    /* Airbnb-specific components */
-    .airbnb-button {
-        @apply bg-gradient-to-r from-airbnb-red to-airbnb-pink text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 hover:opacity-90;
+    /* Green-specific components */
+    .green-button {
+        @apply bg-gradient-to-r from-green-primary to-green-secondary text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 hover:opacity-90;
     }
     
-    .airbnb-card {
+    .green-card {
         @apply rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300;
     }
     
-    .airbnb-section-title {
+    .green-section-title {
         @apply text-2xl font-bold text-foreground mb-6;
     }
     
-    .airbnb-tab {
+    .green-tab {
         @apply px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary border-b-2 border-transparent hover:border-primary transition-all duration-200;
     }
     
-    .airbnb-tab.active {
+    .green-tab.active {
         @apply text-primary border-primary;
     }
 }

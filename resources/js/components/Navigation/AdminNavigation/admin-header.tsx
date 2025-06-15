@@ -34,7 +34,7 @@ export function AdminHeader({ title = 'Admin Dashboard' }: AdminHeaderProps) {
         <div className="flex items-center justify-between w-full">
             {/* Left - Logo & Title */}
             <div className="flex items-center space-x-3">
-                <h1 className={`text-lg font-semibold text-red-500`}>{title}</h1>
+                <h1 className={`text-lg font-semibold text-green-500 `}>{title}</h1>
             </div>
 
             {/* Center - Search */}

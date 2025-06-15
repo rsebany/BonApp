@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowLeft } from "lucide-react";
 
 
 interface User {
@@ -84,7 +85,7 @@ export default function ShowUser({
                     <h2 className="text-2xl font-bold tracking-tight">User Details</h2>
                     <div className="flex space-x-2">
                         <Button asChild variant="outline">
-                            <Link href={route('admin.users.index')}>Back to Users</Link>
+                            <Link href={route('admin.users.index')}><ArrowLeft className="h-4 w-4 mr-2" /> Back to Users</Link>
                         </Button>
                         <Button asChild>
                             <Link href={route('admin.users.edit', { user: user.id })}>

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormEvent } from "react";
+import { ArrowLeft } from "lucide-react";
 
 interface User {
   id: number;
@@ -50,6 +51,7 @@ export default function EditUser() {
           <h2 className="text-2xl font-bold tracking-tight">Edit User</h2>
           <Button asChild variant="outline">
             <Link href={route('admin.users.show', { user: user.id })}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
               Back to User
             </Link>
           </Button>

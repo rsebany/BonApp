@@ -84,6 +84,7 @@ interface Driver {
 }
 
 interface OrderStatus {
+  name: string;
   id: number;
   status: string;
 }
@@ -230,7 +231,7 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
                               )}
                               onClick={() => setSelectedStatus(status.id.toString())}
                             >
-                              {status.status}
+                              {status.name}
                             </Button>
                           ))}
                         </div>

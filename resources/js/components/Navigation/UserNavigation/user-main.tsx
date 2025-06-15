@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// Define types (same as before)
+// Define types
 type OrderStatus = 'Preparing' | 'On the way' | 'Delivered' | 'Cancelled';
 
 interface RecentOrder {
@@ -153,7 +153,7 @@ const mockData = {
 const OrderStatusBadge = ({ status }: { status: OrderStatus }) => {
   const statusConfig = {
     'Preparing': { icon: Utensils, color: 'bg-blue-100 text-blue-600' },
-    'On the way': { icon: Truck, color: 'bg-yellow-100 text-yellow-600' },
+    'On the way': { icon: Truck, color: 'bg-[#00A699]/10 text-[#00A699]' },
     'Delivered': { icon: CheckCircle, color: 'bg-green-100 text-green-600' },
     'Cancelled': { icon: Clock, color: 'bg-red-100 text-red-600' }
   };
@@ -187,16 +187,16 @@ const RestaurantCard = ({ restaurant, onClick }: { restaurant: Restaurant, onCli
         }}
       >
         <Heart 
-          className={`w-4 h-4 ${restaurant.isFavorite ? 'text-red-500 fill-current' : 'text-gray-400'}`} 
+          className={`w-4 h-4 ${restaurant.isFavorite ? 'text-[#00A699] fill-current' : 'text-gray-400'}`} 
         />
       </button>
       {restaurant.isTrending && (
-        <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
+        <div className="absolute top-2 left-2 bg-[#00A699] text-white text-xs px-2 py-1 rounded-full">
           Trending
         </div>
       )}
       {restaurant.isTopRated && (
-        <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+        <div className="absolute top-2 left-2 bg-[#008489] text-white text-xs px-2 py-1 rounded-full">
           Top Rated
         </div>
       )}
@@ -223,7 +223,6 @@ const RestaurantCard = ({ restaurant, onClick }: { restaurant: Restaurant, onCli
 
 export function UserMain() {
   const navigate = useNavigate();
-   {/*const [searchQuery, setSearchQuery] = useState('');*/}
   const [activeTab, setActiveTab] = useState<'orders' | 'favorites'>('orders');
 
   return (
@@ -232,33 +231,20 @@ export function UserMain() {
       <div className="bg-white p-4 rounded-lg shadow-sm">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Good afternoon, User!</h1>
         <p className="text-gray-600 mb-4">What delicious meal are you craving today?</p>
-        
-        {/*<div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search for restaurants or dishes..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>*/}
       </div>
 
       {/* Delivery address */}
       <div className="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="bg-orange-100 p-2 rounded-lg">
-            <MapPin className="w-5 h-5 text-orange-600" />
+          <div className="bg-[#00A699]/10 p-2 rounded-lg">
+            <MapPin className="w-5 h-5 text-[#00A699]" />
           </div>
           <div>
             <p className="text-sm text-gray-500">Deliver to</p>
             <p className="font-medium text-gray-900">Home • 123 Main St, Apt 4B</p>
           </div>
         </div>
-        <button className="text-orange-600 hover:text-orange-700 text-sm font-medium">
+        <button className="text-[#00A699] hover:text-[#008489] text-sm font-medium">
           Change
         </button>
       </div>
@@ -270,10 +256,10 @@ export function UserMain() {
           {mockData.categories.map((category, index) => (
             <button 
               key={index}
-              className="flex flex-col items-center justify-center p-2 rounded-lg bg-gray-50 hover:bg-orange-50 transition-colors"
+              className="flex flex-col items-center justify-center p-2 rounded-lg bg-gray-50 hover:bg-[#00A699]/10 transition-colors"
               onClick={() => navigate(`/search?category=${category.name}`)}
             >
-              <div className="bg-orange-100 p-2 rounded-full mb-2 text-orange-500">
+              <div className="bg-[#00A699]/10 p-2 rounded-full mb-2 text-[#00A699]">
                 {category.icon}
               </div>
               <span className="text-xs font-medium text-gray-700">{category.name}</span>
@@ -297,7 +283,7 @@ export function UserMain() {
                 alt={mockData.recentOrders[0].restaurant}
                 className="w-14 h-14 rounded-lg object-cover"
               />
-              <div className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              <div className="absolute -top-1 -right-1 bg-[#00A699] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                 {mockData.recentOrders[0].items.length}
               </div>
             </div>
@@ -316,7 +302,7 @@ export function UserMain() {
               <p className="font-medium text-sm">{mockData.recentOrders[0].deliveryEstimate}</p>
             </div>
             <button 
-              className="text-orange-600 hover:text-orange-700 text-sm font-medium"
+              className="text-[#00A699] hover:text-[#008489] text-sm font-medium"
               onClick={() => navigate(`/order/${mockData.recentOrders[0].id}`)}
             >
               Track order
@@ -329,13 +315,13 @@ export function UserMain() {
       <div className="bg-white p-1 rounded-lg shadow-sm">
         <div className="flex">
           <button
-            className={`flex-1 py-2 px-4 text-center font-medium rounded-md text-sm ${activeTab === 'orders' ? 'bg-orange-50 text-orange-600' : 'text-gray-600'}`}
+            className={`flex-1 py-2 px-4 text-center font-medium rounded-md text-sm ${activeTab === 'orders' ? 'bg-[#00A699]/10 text-[#00A699]' : 'text-gray-600'}`}
             onClick={() => setActiveTab('orders')}
           >
             My Orders
           </button>
           <button
-            className={`flex-1 py-2 px-4 text-center font-medium rounded-md text-sm ${activeTab === 'favorites' ? 'bg-orange-50 text-orange-600' : 'text-gray-600'}`}
+            className={`flex-1 py-2 px-4 text-center font-medium rounded-md text-sm ${activeTab === 'favorites' ? 'bg-[#00A699]/10 text-[#00A699]' : 'text-gray-600'}`}
             onClick={() => setActiveTab('favorites')}
           >
             Favorites
@@ -377,7 +363,7 @@ export function UserMain() {
                   <p className="font-medium text-sm">{order.total}</p>
                   {order.status === 'Delivered' && (
                     <button 
-                      className="mt-1 text-xs text-orange-600 hover:text-orange-700"
+                      className="mt-1 text-xs text-[#00A699] hover:text-[#008489]"
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate(`/restaurant/${order.restaurant.toLowerCase().replace(' ', '-')}`);
@@ -391,7 +377,7 @@ export function UserMain() {
             </div>
           ))}
           
-          <button className="w-full flex items-center justify-center gap-2 py-2 text-orange-600 hover:text-orange-700 font-medium text-sm bg-white rounded-lg shadow-sm">
+          <button className="w-full flex items-center justify-center gap-2 py-2 text-[#00A699] hover:text-[#008489] font-medium text-sm bg-white rounded-lg shadow-sm">
             <History className="w-4 h-4" />
             <span>View all order history</span>
           </button>
@@ -416,7 +402,7 @@ export function UserMain() {
               <h3 className="font-medium text-gray-900">No favorites yet</h3>
               <p className="text-gray-500 text-sm mt-1">Save your favorite restaurants for quick access</p>
               <button 
-                className="mt-3 text-orange-600 hover:text-orange-700 font-medium text-sm"
+                className="mt-3 text-[#00A699] hover:text-[#008489] font-medium text-sm"
                 onClick={() => navigate('/search')}
               >
                 Browse restaurants
@@ -431,7 +417,7 @@ export function UserMain() {
         <div className="flex items-center justify-between px-1">
           <h2 className="text-lg font-semibold text-gray-900">Recommended for you</h2>
           <button 
-            className="text-orange-600 hover:text-orange-700 text-sm font-medium"
+            className="text-[#00A699] hover:text-[#008489] text-sm font-medium"
             onClick={() => navigate('/search')}
           >
             See all

@@ -1,784 +1,589 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/layouts/Admin/AdminLayout';
-import { Plus, ArrowLeft, X, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { ChevronsUpDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import axios from 'axios';
+
+interface OrderPayload {
+  customer_id: string;
+  restaurant_id: string;
+  customer_address_id: string;
+  order_status_id: string;
+  assigned_driver_id: string | null;
+  order_date_time: string;
+  requested_delivery_date_time: string;
+  delivery_fee: string;
+  total_amount: string;
+  items: Array<{
+    menu_item_id: string;
+    quantity: number;
+    price: string;
+    subtotal: string;
+  }>;
+}
+
+interface RestaurantAddress {
+  street_number?: string;
+  address_line1?: string;
+  city?: string;
+  region?: string;
+  postal_code?: string;
+}
 
 interface MenuItem {
   id: number;
-  name: string;
+  item_name: string;
   price: string;
-  description?: string;
+  restaurant_id: number;
+}
+
+interface Customer {
+  id: number;
+  name: string;
+  last_name: string;
+  first_name: string;
+  email: string;
+  addresses: Address[];
+}
+
+interface Address {
+  id: number;
+  street_number?: string;
+  address_line1?: string;
+  city?: string;
+  region?: string;
+  postal_code?: string;
 }
 
 interface Restaurant {
   id: number;
+  name: string;
+  address_id: string;
   restaurant_name: string;
-  phone?: string;
-  email?: string;
-  address?: {
-    id: number;
-    address_line1: string;
-    address_line2?: string;
-    city: string;
-    region: string;
-    postal_code: string;
-    country?: {
-      id: number;
-      name: string;
-    };
-  };
+  address: RestaurantAddress | null;
+  menu_items: MenuItem[];
 }
 
 interface OrderStatus {
   id: number;
   status: string;
-  name: string;
 }
 
-interface User {
+interface Driver {
   id: number;
   first_name: string;
   last_name: string;
-  email: string;
-  phone?: string;
+  is_available: boolean;
+}
+
+interface OrderItem {
+  id?: number;
+  menu_item_id: string;
+  quantity: number;
+  price: string;
+  subtotal: string;
+  item_name?: string;
 }
 
 interface Order {
   id: number;
-  customer: User;
-  restaurant: Restaurant;
-  order_status: OrderStatus;
-  assigned_driver?: User;
-  customer_address: {
-    id: number;
-    address_line1: string;
-    address_line2?: string;
-    city: string;
-    region: string;
-    postal_code: string;
-    country?: {
-      id: number;
-      name: string;
-    };
-  };
-  order_items: Array<{
-    id: number;
-    menu_item_id: string;
-    quantity: number;
-    price: string;
-  }>;
-  total_amount: string;
+  customer_id: number;
+  restaurant_id: number;
+  customer_address_id: number;
+  order_status_id: number;
+  assigned_driver_id: number | null;
+  order_date_time: string;
+  requested_delivery_date_time: string;
   delivery_fee: string;
-  order_datetime: string;
-  requested_delivery_datetime?: string;
-  created_at: string;
-  updated_at: string;
+  total_amount: string;
+  items: OrderItem[];
+  customer: Customer;
+  restaurant: Restaurant;
+  orderStatus: OrderStatus;
+  assignedDriver: Driver | null;
+  customerAddress: Address;
 }
 
 interface OrderEditProps {
   order: Order;
-  customers: User[];
-  restaurants: Restaurant[];
-  orderStatuses: OrderStatus[];
-  drivers: User[];
+  customers?: Customer[];
+  restaurants?: Restaurant[];
+  orderStatuses?: OrderStatus[];
+  drivers?: Driver[];
 }
 
-export default function OrderEdit({ order, customers, restaurants, orderStatuses, drivers }: OrderEditProps) {
-  const [formData, setFormData] = useState({
-    customer_id: order.customer.id.toString(),
-    restaurant_id: order.restaurant.id.toString(),
-    customer_address_id: order.customer_address.id.toString(),
-    order_status_id: order.order_status.id.toString(),
-    assigned_driver_id: order.assigned_driver?.id.toString() || '',
-    order_datetime: order.order_datetime.slice(0, 16),
-    requested_delivery_datetime: order.requested_delivery_datetime?.slice(0, 16) || '',
-    delivery_fee: order.delivery_fee,
-    total_amount: order.total_amount,
-    order_items: order.order_items.map(item => ({
-      id: item.id,
-      menu_item_id: item.menu_item_id,
+export default function OrderEdit({ 
+  order: initialOrder, 
+  customers = [], 
+  restaurants = [], 
+  orderStatuses = [],
+  drivers = [] 
+}: OrderEditProps) {
+  const [formData, setFormData] = useState<OrderPayload>({
+    customer_id: initialOrder.customer_id.toString(),
+    restaurant_id: initialOrder.restaurant_id.toString(),
+    customer_address_id: initialOrder.customer_address_id.toString(),
+    order_status_id: initialOrder.order_status_id.toString(),
+    assigned_driver_id: initialOrder.assigned_driver_id?.toString() || null,
+    order_date_time: new Date(initialOrder.order_date_time).toISOString(),
+    requested_delivery_date_time: initialOrder.requested_delivery_date_time 
+      ? new Date(initialOrder.requested_delivery_date_time).toISOString()
+      : new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    delivery_fee: initialOrder.delivery_fee,
+    total_amount: initialOrder.total_amount,
+    items: initialOrder.items.map(item => ({
+      menu_item_id: item.menu_item_id.toString(),
       quantity: item.quantity,
       price: item.price,
+      subtotal: item.subtotal
     })),
   });
 
-  const [selectedCustomer, setSelectedCustomer] = useState<User>(order.customer);
-  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant>(order.restaurant);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingMenuItems, setIsLoadingMenuItems] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [loadingMenuItems, setLoadingMenuItems] = useState(false);
+  const [customerAddresses, setCustomerAddresses] = useState<Address[]>(initialOrder.customer.addresses || []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+  // Fetch menu items when restaurant changes
+  useEffect(() => {
+    if (formData.restaurant_id) {
+      setLoadingMenuItems(true);
+      axios.get(`/admin/restaurants/${formData.restaurant_id}/menu-items`)
+        .then(response => {
+          setMenuItems(response.data);
+          setLoadingMenuItems(false);
+        })
+        .catch(error => {
+          console.error('Error fetching menu items:', error);
+          setMenuItems([]);
+          setLoadingMenuItems(false);
+        });
+    } else {
+      setMenuItems([]);
+    }
+  }, [formData.restaurant_id]);
+
+  // Update customer addresses when customer changes
+  useEffect(() => {
+    if (formData.customer_id) {
+      const customer = customers.find(c => c.id === Number(formData.customer_id));
+      setCustomerAddresses(customer?.addresses || []);
+    }
+  }, [formData.customer_id, customers]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setErrors({});
+
+    try {
+      const payload = {
+        ...formData,
+        items: JSON.stringify(formData.items),
+      };
+      
+      router.put(route('admin.orders.update', initialOrder.id), payload, {
+        onSuccess: () => {
+          toast.success('Order updated successfully');
+        },
+        onError: (errors) => {
+          setErrors(errors as Record<string, string>);
+          toast.error('Failed to update order');
+        },
+        onFinish: () => setIsSubmitting(false),
+      });
+    } catch (error) {
+      console.error('Error updating order:', error);
+      toast.error('An unexpected error occurred');
+      setIsSubmitting(false);
     }
   };
 
-  const handleSelectChange = useCallback((name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  }, [errors]);
-
-  const handleRestaurantSelect = useCallback(async (restaurantId: string) => {
-    const restaurant = restaurants.find(r => r.id.toString() === restaurantId);
-    if (restaurant) {
-      setSelectedRestaurant(restaurant);
-      handleSelectChange('restaurant_id', restaurantId);
-      
-      setIsLoadingMenuItems(true);
-      try {
-        const response = await fetch(`/api/restaurants/${restaurantId}/menu-items`);
-        if (!response.ok) throw new Error('Failed to fetch menu items');
-        const data = await response.json();
-        setMenuItems(data);
-      } catch {
-        console.error('Failed to load menu items');
-      } finally {
-        setIsLoadingMenuItems(false);
-      }
-    }
-  }, [restaurants, handleSelectChange]);
-
-  // Load menu items when component mounts
-  useEffect(() => {
-    handleRestaurantSelect(order.restaurant.id.toString());
-  }, [handleRestaurantSelect, order.restaurant.id]);
-
-  const handleCustomerSelect = (customerId: string) => {
-    const customer = customers.find(c => c.id.toString() === customerId);
-    if (customer) {
-      setSelectedCustomer(customer);
-      handleSelectChange('customer_id', customerId);
-    }
+  const handleSelectChange = (field: keyof OrderPayload, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+      ...(field === 'restaurant_id' && { items: [] }) // Clear items when restaurant changes
+    }));
   };
 
   const handleAddItem = () => {
     setFormData(prev => ({
       ...prev,
-      order_items: [
-        ...prev.order_items,
-        { id: 0, menu_item_id: '', quantity: 1, price: '0.00' }
+      items: [
+        ...prev.items,
+        { menu_item_id: '', quantity: 1, price: '0.00', subtotal: '0.00' }
       ],
     }));
   };
 
+  const handleRemoveItem = (index: number) => {
+    setFormData(prev => {
+      const newItems = prev.items.filter((_, i) => i !== index);
+      const subtotal = newItems.reduce((sum, item) => sum + Number(item.subtotal), 0);
+      const deliveryFee = Number(prev.delivery_fee) || 0;
+      const totalAmount = (subtotal + deliveryFee).toFixed(2);
+      
+      return {
+        ...prev,
+        items: newItems,
+        total_amount: totalAmount,
+      };
+    });
+  };
+
   const handleItemChange = (index: number, field: string, value: string | number) => {
     setFormData(prev => {
-      const updatedItems = [...prev.order_items];
-      updatedItems[index] = {
-        ...updatedItems[index],
-        [field]: value,
-      };
+      const newItems = [...prev.items];
+      newItems[index] = { ...newItems[index], [field]: value };
 
-      // If menu item is selected, update its price
-      if (field === 'menu_item_id' && typeof value === 'string') {
-        const selectedItem = menuItems.find(item => item.id.toString() === value);
-        if (selectedItem) {
-          updatedItems[index].price = selectedItem.price;
-        }
+      // Calculate subtotal if quantity or price changes
+      if (field === 'quantity' || field === 'price') {
+        const quantity = field === 'quantity' ? Number(value) : Number(newItems[index].quantity);
+        const price = field === 'price' ? Number(value) : Number(newItems[index].price);
+        newItems[index].subtotal = (quantity * price).toFixed(2);
       }
+
+      // Calculate total amount
+      const subtotal = newItems.reduce((sum, item) => sum + Number(item.subtotal), 0);
+      const deliveryFee = Number(prev.delivery_fee) || 0;
+      const totalAmount = (subtotal + deliveryFee).toFixed(2);
 
       return {
         ...prev,
-        order_items: updatedItems,
+        items: newItems,
+        total_amount: totalAmount,
       };
     });
-  };
-
-  const handleRemoveItem = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      order_items: prev.order_items.filter((_, i) => i !== index),
-    }));
-  };
-
-  const calculateTotal = () => {
-    const itemsTotal = formData.order_items.reduce(
-      (sum, item) => sum + (parseFloat(item.price) * item.quantity),
-      0
-    );
-    const deliveryFee = parseFloat(formData.delivery_fee) || 0;
-    return (itemsTotal + deliveryFee).toFixed(2);
-  };
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.customer_id) newErrors.customer_id = 'Customer is required';
-    if (!formData.restaurant_id) newErrors.restaurant_id = 'Restaurant is required';
-    if (!formData.order_status_id) newErrors.order_status_id = 'Order status is required';
-    if (!formData.order_datetime) newErrors.order_datetime = 'Order date and time is required';
-    if (!formData.requested_delivery_datetime) newErrors.requested_delivery_datetime = 'Delivery date and time is required';
-    if (formData.order_items.length === 0) newErrors.order_items = 'At least one item is required';
-    
-    // Validate order items
-    formData.order_items.forEach((item, index) => {
-      if (!item.menu_item_id) {
-        newErrors[`order_items.${index}.menu_item_id`] = 'Menu item is required';
-      }
-      if (item.quantity < 1) {
-        newErrors[`order_items.${index}.quantity`] = 'Quantity must be at least 1';
-      }
-    });
-
-    // Validate delivery fee
-    const deliveryFee = parseFloat(formData.delivery_fee);
-    if (isNaN(deliveryFee) || deliveryFee < 0) {
-      newErrors.delivery_fee = 'Delivery fee must be a positive number';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      console.error('Validation failed');
-      return;
-    }
-
-    setIsLoading(true);
-    formData.total_amount = calculateTotal();
-    
-    try {
-      await router.put(route('admin.orders.update', order.id), formData);
-      console.log('Order updated successfully');
-    } catch {
-      console.error('Failed to update order');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleStatusChange = async (statusId: string) => {
-    setIsLoading(true);
-    try {
-      await router.put(route('admin.orders.update', order.id), {
-        ...formData,
-        order_status_id: statusId,
-      });
-      console.log('Order status updated successfully');
-    } catch {
-      console.error('Failed to update order status');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAssignDriver = async (driverId: string) => {
-    setIsLoading(true);
-    try {
-      await router.put(route('admin.orders.update', order.id), {
-        ...formData,
-        assigned_driver_id: driverId,
-      });
-      console.log('Driver assigned successfully');
-    } catch {
-      console.error('Failed to assign driver');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCancelOrder = async () => {
-    setIsLoading(true);
-    try {
-      await router.put(route('admin.orders.update', order.id), {
-        ...formData,
-        order_status_id: orderStatuses.find(s => s.status === 'cancelled')?.id.toString(),
-      });
-      console.log('Order cancelled successfully');
-    } catch {
-      console.error('Failed to cancel order');
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   return (
     <AdminLayout title="Orders Management">
-      <Head title={`Edit Order #${order.id}`} />
-      
+      <Head title={`Edit Order #${initialOrder.id}`} />
+
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold py-2">Edit Order #{order.id}</h1>
-            <p className="text-gray-600">Update order details</p>
+            <h1 className="text-2xl font-bold py-2">Edit Order #{initialOrder.id}</h1>
+            <p className="text-gray-600">Update food delivery order details</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline">
-                  Actions
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[120px] p-0">
-                {orderStatuses.map(status => (
-                  <Button
-                    key={status.id}
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start text-left text-sm"
-                    onClick={() => handleStatusChange(status.id.toString())}
-                    disabled={isLoading || status.id.toString() === formData.order_status_id}
-                  >
-                    {status.name}
-                  </Button>
-                ))}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start text-left text-sm text-red-600"
-                  onClick={() => handleCancelOrder()}
-                  disabled={isLoading || formData.order_status_id === orderStatuses.find(s => s.status === 'cancelled')?.id.toString()}
-                >
-                  Cancel Order
-                </Button>
-              </PopoverContent>
-            </Popover>
-
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline">
-                  Assign Driver
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[120px] p-0">
-                {drivers.map(driver => (
-                  <Button
-                    key={driver.id}
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start text-left text-sm"
-                    onClick={() => handleAssignDriver(driver.id.toString())}
-                    disabled={isLoading || driver.id.toString() === formData.assigned_driver_id}
-                  >
-                    {driver.first_name} {driver.last_name}
-                  </Button>
-                ))}
-              </PopoverContent>
-            </Popover>
-
-            <Button asChild variant="outline">
-              <Link href={route('admin.orders.index')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Orders
-              </Link>
-            </Button>
-          </div>
+          <Button asChild variant="outline">
+            <Link href={route('admin.orders.index')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Orders
+            </Link>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Customer and Restaurant Info */}
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Customer Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="customer_id">Customer</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            "w-full justify-between",
-                            errors.customer_id && "border-red-500"
-                          )}
-                        >
-                          {formData.customer_id ? (
-                            <span>{customers.find(c => c.id.toString() === formData.customer_id)?.first_name} {customers.find(c => c.id.toString() === formData.customer_id)?.last_name} ({customers.find(c => c.id.toString() === formData.customer_id)?.email})</span>
-                          ) : (
-                            <span className="text-gray-500">Select customer</span>
-                          )}
-                          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[200px] p-0">
-                        {customers.map(customer => (
-                          <Button
-                            key={customer.id}
-                            variant="ghost"
-                            size="sm"
-                            className="w-full justify-start text-left text-sm"
-                            onClick={() => {
-                              handleCustomerSelect(customer.id.toString());
-                            }}
-                          >
-                            {customer.first_name} {customer.last_name} ({customer.email})
-                          </Button>
-                        ))}
-                      </PopoverContent>
-                    </Popover>
-                    {errors.customer_id && (
-                      <p className="text-sm text-red-500">{errors.customer_id}</p>
-                    )}
-                  </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Order Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Customer Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="customer_id">Customer *</Label>
+                <select
+                  id="customer_id"
+                  value={formData.customer_id}
+                  onChange={(e) => handleSelectChange('customer_id', e.target.value)}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  required
+                >
+                  <option value="">Select a customer</option>
+                  {customers?.map(customer => (
+                    <option key={customer.id} value={customer.id}>
+                      {customer.first_name} {customer.last_name} ({customer.email})
+                    </option>
+                  ))}
+                </select>
+                {errors.customer_id && (
+                  <p className="text-sm text-red-500">{errors.customer_id}</p>
+                )}
+              </div>
 
-                  {selectedCustomer && (
-                    <div className="space-y-2">
-                      <Label>Customer Details</Label>
-                      <div className="text-sm">
-                        <p>Email: {selectedCustomer.email}</p>
-                        {selectedCustomer.phone && <p>Phone: {selectedCustomer.phone}</p>}
-                      </div>
-                    </div>
+              {/* Customer Address Selection */}
+              {customerAddresses.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="customer_address_id">Delivery Address *</Label>
+                  <select
+                    id="customer_address_id"
+                    value={formData.customer_address_id}
+                    onChange={(e) => handleSelectChange('customer_address_id', e.target.value)}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2"
+                    required
+                  >
+                    <option value="">Select a delivery address</option>
+                    {customerAddresses?.map(address => (
+                      <option key={address.id} value={address.id}>
+                        {[
+                          address.street_number,
+                          address.address_line1,
+                          address.city,
+                          address.region,
+                          address.postal_code
+                        ].filter(Boolean).join(', ')}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.customer_address_id && (
+                    <p className="text-sm text-red-500">{errors.customer_address_id}</p>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              )}
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Restaurant Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="restaurant_id">Restaurant</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            "w-full justify-between",
-                            errors.restaurant_id && "border-red-500"
-                          )}
-                        >
-                          {formData.restaurant_id ? (
-                            <span>{restaurants.find(r => r.id.toString() === formData.restaurant_id)?.restaurant_name}</span>
-                          ) : (
-                            <span className="text-gray-500">Select restaurant</span>
-                          )}
-                          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[200px] p-0">
-                        {restaurants.map(restaurant => (
-                          <Button
-                            key={restaurant.id}
-                            variant="ghost"
-                            size="sm"
-                            className="w-full justify-start text-left text-sm"
-                            onClick={() => handleRestaurantSelect(restaurant.id.toString())}
-                          >
-                            {restaurant.restaurant_name}
-                          </Button>
-                        ))}
-                      </PopoverContent>
-                    </Popover>
-                    {errors.restaurant_id && (
-                      <p className="text-sm text-red-500">{errors.restaurant_id}</p>
-                    )}
+              {/* Restaurant Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="restaurant_id">Restaurant *</Label>
+                <select
+                  id="restaurant_id"
+                  value={formData.restaurant_id}
+                  onChange={(e) => handleSelectChange('restaurant_id', e.target.value)}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  required
+                >
+                  <option value="">Select a restaurant</option>
+                  {restaurants?.map(restaurant => (
+                    <option key={restaurant.id} value={restaurant.id}>
+                      {restaurant.restaurant_name} - {restaurant.address?.city || 'No address'}
+                    </option>
+                  ))}
+                </select>
+                {errors.restaurant_id && (
+                  <p className="text-sm text-red-500">{errors.restaurant_id}</p>
+                )}
+              </div>
+
+              {/* Order Status */}
+              <div className="space-y-2">
+                <Label htmlFor="order_status_id">Order Status *</Label>
+                <select
+                  id="order_status_id"
+                  value={formData.order_status_id}
+                  onChange={(e) => handleSelectChange('order_status_id', e.target.value)}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  required
+                >
+                  <option value="">Select an order status</option>
+                  {orderStatuses?.map(status => (
+                    <option key={status.id} value={status.id}>
+                      {status.status}
+                    </option>
+                  ))}
+                </select>
+                {errors.order_status_id && (
+                  <p className="text-sm text-red-500">{errors.order_status_id}</p>
+                )}
+              </div>
+
+              {/* Assigned Driver */}
+              <div className="space-y-2">
+                <Label htmlFor="assigned_driver_id">Assigned Driver</Label>
+                <select
+                  id="assigned_driver_id"
+                  value={formData.assigned_driver_id || ''}
+                  onChange={(e) => handleSelectChange('assigned_driver_id', e.target.value || '')}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                >
+                  <option value="">No driver assigned</option>
+                  {drivers?.map(driver => (
+                    <option 
+                      key={driver.id} 
+                      value={driver.id}
+                      disabled={!driver.is_available && driver.id !== initialOrder.assigned_driver_id}
+                    >
+                      {driver.first_name} {driver.last_name}
+                      {!driver.is_available && driver.id !== initialOrder.assigned_driver_id && ' (Unavailable)'}
+                    </option>
+                  ))}
+                </select>
+                {errors.assigned_driver_id && (
+                  <p className="text-sm text-red-500">{errors.assigned_driver_id}</p>
+                )}
+              </div>
+
+              {/* Order Date/Time */}
+              <div className="space-y-2">
+                <Label htmlFor="order_date_time">Order Date/Time</Label>
+                <Input
+                  id="order_date_time"
+                  type="datetime-local"
+                  value={formData.order_date_time.substring(0, 16)}
+                  onChange={(e) => handleSelectChange('order_date_time', e.target.value)}
+                />
+                {errors.order_date_time && (
+                  <p className="text-sm text-red-500">{errors.order_date_time}</p>
+                )}
+              </div>
+
+              {/* Delivery Date/Time */}
+              <div className="space-y-2">
+                <Label htmlFor="requested_delivery_date_time">Requested Delivery Date/Time</Label>
+                <Input
+                  id="requested_delivery_date_time"
+                  type="datetime-local"
+                  value={formData.requested_delivery_date_time.substring(0, 16)}
+                  onChange={(e) => handleSelectChange('requested_delivery_date_time', e.target.value)}
+                />
+                {errors.requested_delivery_date_time && (
+                  <p className="text-sm text-red-500">{errors.requested_delivery_date_time}</p>
+                )}
+              </div>
+
+              {/* Order Items */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Order Items *</Label>
+                  <Button 
+                    type="button" 
+                    onClick={handleAddItem} 
+                    variant="outline" 
+                    size="sm"
+                    disabled={!formData.restaurant_id || loadingMenuItems}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Item
+                  </Button>
+                </div>
+
+                {formData.items.length === 0 && (
+                  <div className="text-center py-4 text-gray-500">
+                    {formData.restaurant_id 
+                      ? 'Add items to this order' 
+                      : 'Select a restaurant to add items'}
                   </div>
+                )}
 
-                  {selectedRestaurant && (
-                    <div className="space-y-2">
-                      <Label>Restaurant Details</Label>
-                      <div className="text-sm">
-                        {selectedRestaurant.address && (
-                          <p>Address: {selectedRestaurant.address.address_line1}</p>
-                        )}
-                        {selectedRestaurant.phone && <p>Phone: {selectedRestaurant.phone}</p>}
-                        {selectedRestaurant.email && <p>Email: {selectedRestaurant.email}</p>}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Order Items */}
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Order Items</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {isLoadingMenuItems ? (
-                    <div className="flex items-center justify-center py-4">
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                      <span className="ml-2">Loading menu items...</span>
-                    </div>
-                  ) : (
-                    <>
-                      {formData.order_items.map((item, index) => (
-                        <div key={index} className="flex items-end gap-4 p-4 border rounded-lg">
-                          <div className="flex-1 space-y-2">
-                            <Label>Menu Item</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  role="combobox"
-                                  className={cn(
-                                    "w-full justify-between",
-                                    errors[`order_items.${index}.menu_item_id`] && "border-red-500"
-                                  )}
-                                >
-                                  {item.menu_item_id ? (
-                                    <span>{menuItems.find(i => i.id.toString() === item.menu_item_id)?.name} - ${menuItems.find(i => i.id.toString() === item.menu_item_id)?.price}</span>
-                                  ) : (
-                                    <span className="text-gray-500">Select item</span>
-                                  )}
-                                  <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-[200px] p-0">
-                                {menuItems.map(menuItem => (
-                                  <Button
-                                    key={menuItem.id}
-                                    variant="ghost"
-                                    size="sm"
-                                    className="w-full justify-start text-left text-sm"
-                                    onClick={() => handleItemChange(index, 'menu_item_id', menuItem.id.toString())}
-                                  >
-                                    {menuItem.name} - ${menuItem.price}
-                                  </Button>
-                                ))}
-                              </PopoverContent>
-                            </Popover>
-                            {errors[`order_items.${index}.menu_item_id`] && (
-                              <p className="text-sm text-red-500">
-                                {errors[`order_items.${index}.menu_item_id`]}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="w-24 space-y-2">
-                            <Label>Quantity</Label>
-                            <Input
-                              type="number"
-                              min="1"
-                              value={item.quantity}
-                              onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value))}
-                            />
-                            {errors[`order_items.${index}.quantity`] && (
-                              <p className="text-sm text-red-500">
-                                {errors[`order_items.${index}.quantity`]}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="w-32 space-y-2">
-                            <Label>Price</Label>
-                            <Input
-                              type="text"
-                              value={`$${item.price}`}
-                              disabled
-                            />
-                          </div>
-
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRemoveItem(index)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleAddItem}
-                        disabled={!formData.restaurant_id}
+                {formData.items.map((item, index) => (
+                  <div key={index} className="flex items-end gap-4 p-4 border rounded-lg">
+                    <div className="flex-1 space-y-2">
+                      <Label>Menu Item *</Label>
+                      <select
+                        value={item.menu_item_id}
+                        onChange={(e) => {
+                          const selectedItem = menuItems.find(mi => mi.id === Number(e.target.value));
+                          handleItemChange(index, 'menu_item_id', e.target.value);
+                          if (selectedItem) {
+                            handleItemChange(index, 'price', selectedItem.price);
+                          }
+                        }}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                        required
                       >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Item
-                      </Button>
-
-                      {errors.order_items && (
-                        <p className="text-sm text-red-500">{errors.order_items}</p>
-                      )}
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Order Details */}
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Order Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="order_datetime">Order Date & Time</Label>
-                      <Input
-                        type="datetime-local"
-                        id="order_datetime"
-                        name="order_datetime"
-                        value={formData.order_datetime}
-                        onChange={handleChange}
-                        required
-                      />
-                      {errors.order_datetime && (
-                        <p className="text-sm text-red-500">{errors.order_datetime}</p>
-                      )}
+                        <option value="">Select an item</option>
+                        {menuItems?.map(menuItem => (
+                          <option key={menuItem.id} value={menuItem.id}>
+                            {menuItem.item_name} - ${Number(menuItem.price).toFixed(2)}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="requested_delivery_datetime">Delivery Date & Time</Label>
-                      <Input
-                        type="datetime-local"
-                        id="requested_delivery_datetime"
-                        name="requested_delivery_datetime"
-                        value={formData.requested_delivery_datetime}
-                        onChange={handleChange}
-                        required
-                      />
-                      {errors.requested_delivery_datetime && (
-                        <p className="text-sm text-red-500">{errors.requested_delivery_datetime}</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="order_status_id">Order Status</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "w-full justify-between",
-                              errors.order_status_id && "border-red-500"
-                            )}
-                          >
-                            {formData.order_status_id ? (
-                              <span>{orderStatuses.find(s => s.id.toString() === formData.order_status_id)?.name}</span>
-                            ) : (
-                              <span className="text-gray-500">Select status</span>
-                            )}
-                            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[200px] p-0">
-                          {orderStatuses.map(status => (
-                            <Button
-                              key={status.id}
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start text-left text-sm"
-                              onClick={() => handleSelectChange('order_status_id', status.id.toString())}
-                            >
-                              {status.name}
-                            </Button>
-                          ))}
-                        </PopoverContent>
-                      </Popover>
-                      {errors.order_status_id && (
-                        <p className="text-sm text-red-500">{errors.order_status_id}</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="assigned_driver_id">Assigned Driver</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "w-full justify-between",
-                              errors.assigned_driver_id && "border-red-500"
-                            )}
-                          >
-                            {formData.assigned_driver_id ? (
-                              <span>{drivers.find(d => d.id.toString() === formData.assigned_driver_id)?.first_name} {drivers.find(d => d.id.toString() === formData.assigned_driver_id)?.last_name}</span>
-                            ) : (
-                              <span className="text-gray-500">Select driver</span>
-                            )}
-                            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[200px] p-0">
-                          {drivers.map(driver => (
-                            <Button
-                              key={driver.id}
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start text-left text-sm"
-                              onClick={() => handleSelectChange('assigned_driver_id', driver.id.toString())}
-                            >
-                              {driver.first_name} {driver.last_name}
-                            </Button>
-                          ))}
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="delivery_fee">Delivery Fee</Label>
+                    <div className="w-24 space-y-2">
+                      <Label>Quantity *</Label>
                       <Input
                         type="number"
-                        id="delivery_fee"
-                        name="delivery_fee"
-                        value={formData.delivery_fee}
-                        onChange={handleChange}
-                        min="0"
-                        step="0.01"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                        className="w-full"
                         required
                       />
-                      {errors.delivery_fee && (
-                        <p className="text-sm text-red-500">{errors.delivery_fee}</p>
-                      )}
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Total Amount</Label>
+                    <div className="w-32 space-y-2">
+                      <Label>Price *</Label>
                       <Input
-                        type="text"
-                        value={`$${calculateTotal()}`}
-                        disabled
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={item.price}
+                        onChange={(e) => handleItemChange(index, 'price', e.target.value)}
+                        className="w-full"
+                        required
                       />
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
 
-          <div className="flex justify-end gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              asChild
-            >
-              <Link href={route('admin.orders.index')}>Cancel</Link>
-            </Button>
-            <Button
-              type="submit"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Updating Order...
-                </>
-              ) : (
-                'Update Order'
-              )}
-            </Button>
-          </div>
+                    <div className="w-32 space-y-2">
+                      <Label>Subtotal</Label>
+                      <Input
+                        type="text"
+                        value={`$${item.subtotal}`}
+                        readOnly
+                        className="w-full bg-gray-50"
+                      />
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={() => handleRemoveItem(index)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+
+                {errors.items && (
+                  <p className="text-sm text-red-500">{errors.items}</p>
+                )}
+              </div>
+
+              {/* Delivery Fee */}
+              <div className="space-y-2">
+                <Label htmlFor="delivery_fee">Delivery Fee *</Label>
+                <Input
+                  id="delivery_fee"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.delivery_fee}
+                  onChange={(e) => {
+                    handleSelectChange('delivery_fee', e.target.value);
+                    // Recalculate total amount
+                    const subtotal = formData.items.reduce((sum, item) => sum + Number(item.subtotal), 0);
+                    const deliveryFee = Number(e.target.value) || 0;
+                    handleSelectChange('total_amount', (subtotal + deliveryFee).toFixed(2));
+                  }}
+                  required
+                />
+                {errors.delivery_fee && (
+                  <p className="text-sm text-red-500">{errors.delivery_fee}</p>
+                )}
+              </div>
+
+              {/* Total Amount */}
+              <div className="space-y-2">
+                <Label htmlFor="total_amount">Total Amount</Label>
+                <Input
+                  id="total_amount"
+                  type="text"
+                  value={`$${formData.total_amount}`}
+                  readOnly
+                  className="bg-gray-50 font-bold"
+                />
+                {errors.total_amount && (
+                  <p className="text-sm text-red-500">{errors.total_amount}</p>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <div className="pt-4">
+                <Button type="submit" disabled={isSubmitting || formData.items.length === 0}>
+                  {isSubmitting ? 'Updating...' : 'Update Order'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </form>
       </div>
     </AdminLayout>
