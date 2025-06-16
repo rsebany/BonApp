@@ -59,4 +59,15 @@ class Address extends Model
 
         return implode(', ', $parts);
     }
+
+    public function getShortAddressAttribute()
+    {
+        $parts = array_filter([
+            $this->address_line1,
+            $this->city,
+            $this->region,
+        ]);
+
+        return implode(', ', $parts);
+    }
 }

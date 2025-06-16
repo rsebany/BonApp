@@ -99,10 +99,10 @@ class RestaurantController extends Controller
 
             // Create address first
             $address = Address::create([
-                'unit_number' => $request->address['unit_number'],
-                'street_number' => $request->address['street_number'],
+                'unit_number' => $request->address['unit_number'] ?? null,
+                'street_number' => $request->address['street_number'] ?? null,
                 'address_line1' => $request->address['address_line1'],
-                'address_line2' => $request->address['address_line2'],
+                'address_line2' => $request->address['address_line2'] ?? null,
                 'city' => $request->address['city'],
                 'region' => $request->address['region'],
                 'postal_code' => $request->address['postal_code'],
@@ -160,7 +160,7 @@ class RestaurantController extends Controller
             'address.country:id,country_name',
             'menuItems' => function ($query) {
                 $query->select('id', 'restaurant_id', 'item_name', 'price', 'is_available')
-                      ->orderBy('item_name');
+                    ->orderBy('item_name');
             }
         ])->findOrFail($id);
 
@@ -195,54 +195,52 @@ class RestaurantController extends Controller
                 'food_orders.cust_restaurant_rating',
                 'users.first_name',
                 'users.last_name',
-                'order_statuses.status_value'
+                'order_statuses.name as status_value'
             )
             ->where('food_orders.restaurant_id', $id)
             ->orderBy('food_orders.created_at', 'desc')
             ->limit(10)
             ->get();
 
-        return Inertia::render('Admin/Restaurants/Show', [
+        return Inertia::render('admin/Restaurants/show', [  // Note: Capitalized 'Admin' and 'Show'
             'restaurant' => new RestaurantResource($restaurant),
             'stats' => $stats,
             'recentOrders' => $recentOrders,
         ]);
     }
 
-    public function edit($id)
+    public function edit(Restaurant $restaurant)
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
             return redirect('/dashboard');
         }
 
-        $restaurant = Restaurant::with(['address', 'address.country'])->findOrFail($id);
+        $restaurant = Restaurant::with(['address', 'address.country'])->findOrFail($restaurant->id);
         $countries = Country::select('id', 'country_name')->orderBy('country_name')->get();
 
-        return Inertia::render('Admin/Restaurants/Edit', [
-            'restaurant' => new RestaurantResource($restaurant),
+        return Inertia::render('admin/Restaurants/edit', [
+            'restaurant' => $restaurant->id ? new RestaurantResource($restaurant) : null,
             'countries' => $countries,
         ]);
     }
 
-    public function update(UpdateRestaurantRequest $request, $id)
+    public function update(UpdateRestaurantRequest $request, Restaurant $restaurant)
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
             return redirect('/dashboard');
         }
-
-        $restaurant = Restaurant::with('address')->findOrFail($id);
 
         try {
             DB::beginTransaction();
 
             // Update address
             $restaurant->address->update([
-                'unit_number' => $request->address['unit_number'],
-                'street_number' => $request->address['street_number'],
+                'unit_number' => $request->address['unit_number'] ?? null,
+                'street_number' => $request->address['street_number'] ?? null,
                 'address_line1' => $request->address['address_line1'],
-                'address_line2' => $request->address['address_line2'],
+                'address_line2' => $request->address['address_line2'] ?? null,
                 'city' => $request->address['city'],
                 'region' => $request->address['region'],
                 'postal_code' => $request->address['postal_code'],
@@ -277,7 +275,7 @@ class RestaurantController extends Controller
 
             DB::commit();
 
-            return redirect()->route('admin.restaurants.show', $restaurant->id)
+            return redirect()->route('admin.restaurants.show', $restaurant)
                 ->with('success', 'Restaurant updated successfully');
 
         } catch (\Exception $e) {
@@ -404,5 +402,73 @@ class RestaurantController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to perform bulk action. Please try again.'], 500);
         }
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        // Ensure user is admin
+        if (auth()->user()->role !== 'admin') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $validatedData = $request->validate([
+            'restaurant_ids' => 'required|array',
+            'restaurant_ids.*' => 'exists:restaurants,id',
+        ]);
+
+        $restaurantIds = $validatedData['restaurant_ids'];
+
+        try {
+            // Check if any restaurant has orders
+            $hasOrders = DB::table('food_orders')
+                ->whereIn('restaurant_id', $restaurantIds)
+                ->exists();
+
+            if ($hasOrders) {
+                return back()->withErrors(['error' => 'Cannot delete restaurants with existing orders. Deactivate them instead.']);
+            }
+
+            DB::beginTransaction();
+
+            $restaurants = Restaurant::whereIn('id', $restaurantIds)->get();
+            
+            // Delete images and menu items
+            foreach ($restaurants as $restaurant) {
+                if ($restaurant->image_path && Storage::disk('public')->exists($restaurant->image_path)) {
+                    Storage::disk('public')->delete($restaurant->image_path);
+                }
+                $restaurant->menuItems()->delete();
+            }
+
+            Restaurant::whereIn('id', $restaurantIds)->delete();
+
+            DB::commit();
+
+            return redirect()->route('admin.restaurants.index')
+                ->with('success', 'Selected restaurants deleted successfully');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Failed to delete restaurants. Please try again.']);
+        }
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        // Ensure user is admin
+        if (auth()->user()->role !== 'admin') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $restaurant = Restaurant::findOrFail($id);
+        
+        $validatedData = $request->validate([
+            'is_active' => 'required|boolean',
+        ]);
+
+        $restaurant->update(['is_active' => $validatedData['is_active']]);
+
+        return redirect()->back()
+            ->with('success', 'Restaurant status updated successfully');
     }
 }

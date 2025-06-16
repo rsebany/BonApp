@@ -166,12 +166,12 @@ export default function RestaurantsIndex({ restaurants, cities, filters, user }:
 
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold py-2 px-2">Restaurants</h1>
             <p className="text-gray-600 px-2">Manage partner restaurants</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pt-2">
             {selectedRestaurants.length > 0 && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -196,7 +196,7 @@ export default function RestaurantsIndex({ restaurants, cities, filters, user }:
               </AlertDialog>
             )}
             {user?.role === 'admin' && (
-              <Button asChild>
+              <Button asChild className="bg-green-600 hover:bg-green-700">
                 <Link href={route('admin.restaurants.create')}>
                   <Plus className="h-4 w-4 mr-2" />
                   New Restaurant
@@ -205,6 +205,7 @@ export default function RestaurantsIndex({ restaurants, cities, filters, user }:
             )}
           </div>
         </div>
+      </div>
 
         {error && (
           <Alert variant="destructive">
@@ -483,7 +484,6 @@ export default function RestaurantsIndex({ restaurants, cities, filters, user }:
             </div>
           </div>
         )}
-      </div>
     </AdminLayout>
   );
 }
