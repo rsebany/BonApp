@@ -19,7 +19,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('cuisine_type', 100);
             $table->string('opening_hours');
-            $table->integer('delivery_time'); // in minutes
+            $table->integer('delivery_time'); 
             $table->decimal('minimum_order', 8, 2)->default(0);
             $table->decimal('delivery_fee', 8, 2)->default(0);
             $table->string('image_path')->nullable();

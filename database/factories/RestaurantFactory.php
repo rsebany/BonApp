@@ -30,12 +30,11 @@ class RestaurantFactory extends Factory
             'email' => $this->faker->companyEmail(),
             'address_id' => Address::factory(),
             'is_active' => true,
-            'opening_time' => $this->faker->time('H:i:s'),
-            'closing_time' => $this->faker->time('H:i:s'),
+            'opening_hours' => $this->faker->regexify('[08-11]:00-[20-23]:00'),
+            'delivery_time' => $this->faker->numberBetween(20, 90),
             'delivery_fee' => $this->faker->randomFloat(2, 2, 8),
             'minimum_order' => $this->faker->randomFloat(2, 10, 30),
-            'average_rating' => $this->faker->randomFloat(1, 3, 5),
-            'total_ratings' => $this->faker->numberBetween(10, 1000),
+            'image_path' => null,
         ];
     }
 }

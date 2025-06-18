@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\Order;
+use App\Models\FoodOrder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Carbon\Carbon;
 
@@ -16,7 +16,7 @@ class FoodOrderFactory extends Factory
      *
      * @var string
      */
-    protected $model = Order::class;
+    protected $model = FoodOrder::class;
 
     /**
      * Define the model's default state.
@@ -31,17 +31,17 @@ class FoodOrderFactory extends Factory
         );
 
         return [
-            'customer_id' => $this->faker->numberBetween(1, 1000),
-            'restaurant_id' => $this->faker->numberBetween(1, 100),
-            'customer_address_id' => $this->faker->numberBetween(1, 2000),
-            'order_status_id' => $this->faker->numberBetween(1, 6), // assuming 6 status types
-            'assigned_driver_id' => $this->faker->optional(0.8)->numberBetween(1, 200),
-            'order_datetime' => $orderDateTime,
+            'customer_id' => \App\Models\User::where('role', 'customer')->inRandomOrder()->first()?->id ?? 1,
+            'restaurant_id' => \App\Models\Restaurant::inRandomOrder()->first()?->id ?? 1,
+            'customer_address_id' => \App\Models\CustomerAddress::inRandomOrder()->first()?->id ?? 1,
+            'order_status_id' => \App\Models\OrderStatus::inRandomOrder()->first()?->id ?? 1,
+            'assigned_driver_id' => \App\Models\Driver::inRandomOrder()->first()?->id,
+            'order_date_time' => $orderDateTime,
             'delivery_fee' => $this->faker->randomFloat(2, 2.99, 9.99),
             'total_amount' => $this->faker->randomFloat(2, 15.00, 150.00),
-            'requested_delivery_datetime' => $requestedDeliveryDateTime,
-            'customer_driver_rating' => $this->faker->optional(0.6)->numberBetween(1, 5),
-            'customer_restaurant_rating' => $this->faker->optional(0.7)->numberBetween(1, 5),
+            'requested_delivery_date_time' => $requestedDeliveryDateTime,
+            'cust_driver_rating' => $this->faker->optional(0.6)->numberBetween(1, 5),
+            'cust_restaurant_rating' => $this->faker->optional(0.7)->numberBetween(1, 5),
         ];
     }
 
@@ -53,8 +53,8 @@ class FoodOrderFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'order_status_id' => 1,
             'assigned_driver_id' => null,
-            'customer_driver_rating' => null,
-            'customer_restaurant_rating' => null,
+            'cust_driver_rating' => null,
+            'cust_restaurant_rating' => null,
         ]);
     }
 
@@ -66,8 +66,8 @@ class FoodOrderFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'order_status_id' => 2,
             'assigned_driver_id' => $this->faker->numberBetween(1, 200),
-            'customer_driver_rating' => null,
-            'customer_restaurant_rating' => null,
+            'cust_driver_rating' => null,
+            'cust_restaurant_rating' => null,
         ]);
     }
 
@@ -79,8 +79,8 @@ class FoodOrderFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'order_status_id' => 3,
             'assigned_driver_id' => $this->faker->numberBetween(1, 200),
-            'customer_driver_rating' => null,
-            'customer_restaurant_rating' => null,
+            'cust_driver_rating' => null,
+            'cust_restaurant_rating' => null,
         ]);
     }
 
@@ -92,8 +92,8 @@ class FoodOrderFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'order_status_id' => 4,
             'assigned_driver_id' => $this->faker->numberBetween(1, 200),
-            'customer_driver_rating' => null,
-            'customer_restaurant_rating' => null,
+            'cust_driver_rating' => null,
+            'cust_restaurant_rating' => null,
         ]);
     }
 
@@ -105,8 +105,8 @@ class FoodOrderFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'order_status_id' => 5,
             'assigned_driver_id' => $this->faker->numberBetween(1, 200),
-            'customer_driver_rating' => $this->faker->numberBetween(1, 5),
-            'customer_restaurant_rating' => $this->faker->numberBetween(1, 5),
+            'cust_driver_rating' => $this->faker->numberBetween(1, 5),
+            'cust_restaurant_rating' => $this->faker->numberBetween(1, 5),
         ]);
     }
 
@@ -118,8 +118,8 @@ class FoodOrderFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'order_status_id' => 6,
             'assigned_driver_id' => $this->faker->optional(0.3)->numberBetween(1, 200),
-            'customer_driver_rating' => null,
-            'customer_restaurant_rating' => null,
+            'cust_driver_rating' => null,
+            'cust_restaurant_rating' => null,
         ]);
     }
 
@@ -130,8 +130,8 @@ class FoodOrderFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'order_status_id' => 5, // delivered
-            'customer_driver_rating' => $this->faker->numberBetween(4, 5),
-            'customer_restaurant_rating' => $this->faker->numberBetween(4, 5),
+            'cust_driver_rating' => $this->faker->numberBetween(4, 5),
+            'cust_restaurant_rating' => $this->faker->numberBetween(4, 5),
         ]);
     }
 
@@ -142,8 +142,8 @@ class FoodOrderFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'order_status_id' => 5, // delivered
-            'customer_driver_rating' => $this->faker->numberBetween(1, 2),
-            'customer_restaurant_rating' => $this->faker->numberBetween(1, 2),
+            'cust_driver_rating' => $this->faker->numberBetween(1, 2),
+            'cust_restaurant_rating' => $this->faker->numberBetween(1, 2),
         ]);
     }
 
@@ -164,7 +164,7 @@ class FoodOrderFactory extends Factory
     public function recent(): static
     {
         return $this->state(fn (array $attributes) => [
-            'order_datetime' => $this->faker->dateTimeBetween('-7 days', 'now'),
+            'order_date_time' => $this->faker->dateTimeBetween('-7 days', 'now'),
         ]);
     }
 }

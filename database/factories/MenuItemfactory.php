@@ -43,10 +43,27 @@ class MenuItemFactory extends Factory
             'Milkshake', 'Smoothie', 'Hot Chocolate', 'Green Tea'
         ];
 
+        $item = $this->faker->randomElement($foodItems);
+        $category = match(true) {
+            in_array($item, ['Buffalo Wings', 'Mozzarella Sticks', 'Loaded Nachos', 'Onion Rings', 'Caesar Salad',
+                'Chicken Tenders', 'Potato Skins', 'Spinach Artichoke Dip', 'Jalapeño Poppers', 'Calamari Rings']) => 'Appetizer',
+            in_array($item, ['Cheeseburger', 'Chicken Sandwich', 'Fish and Chips', 'Grilled Salmon', 'Beef Steak',
+                'Pasta Carbonara', 'Chicken Alfredo', 'Vegetable Stir Fry', 'BBQ Ribs', 'Fish Tacos',
+                'Margherita Pizza', 'Pepperoni Pizza', 'Supreme Pizza', 'Chicken Caesar Wrap', 'Club Sandwich']) => 'Main Course',
+            in_array($item, ['Chocolate Cake', 'Cheesecake', 'Ice Cream Sundae', 'Apple Pie', 'Brownies',
+                'Tiramisu', 'Crème Brûlée', 'Chocolate Mousse', 'Key Lime Pie', 'Banana Split']) => 'Dessert',
+            default => 'Beverage',
+        };
+
         return [
-            'restaurant_id' => $this->faker->numberBetween(1, 100),
-            'item_name' => $this->faker->randomElement($foodItems),
+            'restaurant_id' => \App\Models\Restaurant::inRandomOrder()->first()?->id ?? 1,
+            'item_name' => $item,
+            'description' => $this->faker->sentence(),
+            'category' => $category,
             'price' => $this->faker->randomFloat(2, 5.99, 45.99),
+            'image_path' => null,
+            'is_available' => $this->faker->boolean(90),
+            'preparation_time' => $this->faker->numberBetween(10, 60),
         ];
     }
 

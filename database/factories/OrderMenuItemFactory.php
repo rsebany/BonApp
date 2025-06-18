@@ -24,10 +24,12 @@ class OrderMenuItemFactory extends Factory
      */
     public function definition(): array
     {
+        $menuItem = \App\Models\MenuItem::inRandomOrder()->first();
         return [
-            'order_id' => $this->faker->numberBetween(1, 1000),
-            'menu_item_id' => $this->faker->numberBetween(1, 500),
+            'order_id' => \App\Models\FoodOrder::inRandomOrder()->first()?->id ?? 1,
+            'menu_item_id' => $menuItem?->id ?? 1,
             'qty_ordered' => $this->faker->numberBetween(1, 5),
+            'unit_price' => $menuItem?->price ?? 10.00,
         ];
     }
 

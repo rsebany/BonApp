@@ -12,7 +12,18 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            //
+            CountrySeeder::class,
+            UserSeeder::class,
+            AddressSeeder::class,
+            RestaurantSeeder::class,
+            MenuItemSeeder::class,
+            OrderStatusSeeder::class,
+            CustomerAddressSeeder::class,
+            FoodOrderSeeder::class,
+            OrderMenuItemSeeder::class,
+            DriverSeeder::class,
+            OrderStatusHistorySeeder::class,
+            OrderTrackingUpdateSeeder::class,
         ]);
     }
 }
