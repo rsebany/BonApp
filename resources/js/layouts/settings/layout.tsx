@@ -6,24 +6,6 @@ import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 
-const sidebarNavItems: NavItem[] = [
-    {
-        title: 'Profile',
-        href: '/settings/profile',
-        icon: null,
-    },
-    {
-        title: 'Password',
-        href: '/settings/password',
-        icon: null,
-    },
-    {
-        title: 'Appearance',
-        href: '/settings/appearance',
-        icon: null,
-    },
-];
-
 export default function SettingsLayout({ children }: PropsWithChildren) {
     // When server-side rendering, we only render the layout on the client...
     if (typeof window === 'undefined') {
@@ -31,6 +13,25 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     }
 
     const currentPath = window.location.pathname;
+    const isAdmin = currentPath.startsWith('/admin');
+
+    const sidebarNavItems: NavItem[] = [
+        {
+            title: 'Profile',
+            href: isAdmin ? '/admin/profile' : '/settings/profile',
+            icon: null,
+        },
+        {
+            title: 'Password',
+            href: isAdmin ? '/admin/settings/password' : '/settings/password',
+            icon: null,
+        },
+        {
+            title: 'Appearance',
+            href: isAdmin ? '/admin/settings/appearance' : '/settings/appearance',
+            icon: null,
+        },
+    ];
 
     return (
         <div className="px-4 py-6">

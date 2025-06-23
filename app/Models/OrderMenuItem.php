@@ -14,6 +14,7 @@ class OrderMenuItem extends Model
         'order_id',
         'menu_item_id',
         'qty_ordered',
+        'unit_price',
     ];
 
     protected function casts(): array

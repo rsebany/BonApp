@@ -70,7 +70,7 @@ class OrderService
 
     public function cancelOrder(FoodOrder $order, User $user): bool
     {
-        $cancelledStatus = OrderStatus::where('status_value', OrderStatus::CANCELLED)->first();
+        $cancelledStatus = OrderStatus::where('name', OrderStatus::CANCELLED)->first();
         
         if (!$cancelledStatus) {
             return false;
@@ -105,6 +105,6 @@ class OrderService
 
     private function getPendingStatusId(): int
     {
-        return OrderStatus::where('status_value', OrderStatus::PENDING)->first()->id;
+        return OrderStatus::where('name', OrderStatus::PENDING)->first()->id;
     }
 }

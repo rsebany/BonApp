@@ -3,8 +3,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import AdminLayout from '@/layouts/Admin/AdminLayout';
-import { Cell, Line, LineChart, Pie, PieChart, Tooltip, XAxis, YAxis } from 'recharts';
-import { BarChart } from '@/components/charts/BarChart';
+import { 
+    ResponsiveContainer, 
+    LineChart, 
+    Line, 
+    XAxis, 
+    YAxis, 
+    Tooltip, 
+    PieChart, 
+    Pie, 
+    Cell, 
+    Legend,
+    BarChart,
+    Bar,
+    CartesianGrid
+} from 'recharts';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 
 interface ReportData {
@@ -18,6 +31,8 @@ interface ReportData {
         active_restaurants: number;
     };
 }
+
+const PIE_CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'];
 
 export default function ReportsIndex() {
     const { reports, filters } = usePage<{ reports: ReportData; filters: { date_from: string; date_to: string } }>().props;
@@ -36,10 +51,12 @@ export default function ReportsIndex() {
                                 filters.date_to
                             ]}
                         />
-                        <Button variant="outline">
-                            <Download className="w-4 h-4 mr-2" />
-                            Export
-                        </Button>
+                        <a href={route('admin.reports.export', { type: 'analytics', date_from: filters.date_from, date_to: filters.date_to })} download>
+                            <Button variant="outline">
+                                <Download className="w-4 h-4 mr-2" />
+                                Export
+                            </Button>
+                        </a>
                     </div>
                 </div>
 
@@ -87,34 +104,26 @@ export default function ReportsIndex() {
                             <CardTitle>Orders by Status</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <PieChart width={300} height={300}>
-                                <Tooltip />
-                                <Pie
-                                    data={reports.orders_by_status}
-                                    dataKey="count"
-                                    nameKey="name"
-                                    cx="50%"
-                                    cy="50%"
-                                    outerRadius={100}
-                                    fill="#3b82f6"
-                                    label
-                                >
-                                    {reports.orders_by_status.map((entry, index) => (
-                                        <Cell
-                                            key={`cell-${index}`}
-                                            fill={
-                                                [
-                                                    '#3b82f6', // blue
-                                                    '#f59e0b', // amber
-                                                    '#10b981', // emerald
-                                                    '#ef4444', // red
-                                                    '#8b5cf6', // violet
-                                                ][index % 5]
-                                            }
-                                        />
-                                    ))}
-                                </Pie>
-                            </PieChart>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <PieChart>
+                                    <Tooltip />
+                                    <Legend />
+                                    <Pie
+                                        data={reports.orders_by_status}
+                                        dataKey="count"
+                                        nameKey="name"
+                                        cx="50%"
+                                        cy="50%"
+                                        outerRadius={100}
+                                        fill="#8884d8"
+                                        label
+                                    >
+                                        {reports.orders_by_status.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                </PieChart>
+                            </ResponsiveContainer>
                         </CardContent>
                     </Card>
 
@@ -124,20 +133,16 @@ export default function ReportsIndex() {
                             <CardTitle>Monthly Revenue</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <LineChart
-                                width={500}
-                                height={300}
-                                data={reports.monthly_revenue}
-                            >
-                                {/* X Axis */}
-                                <XAxis dataKey="month" />
-                                {/* Y Axis */}
-                                <YAxis />
-                                {/* Tooltip */}
-                                <Tooltip />
-                                {/* Line */}
-                                <Line type="monotone" dataKey="revenue" stroke="#10b981" />
-                            </LineChart>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={reports.monthly_revenue}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="month" />
+                                    <YAxis />
+                                    <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
+                                    <Legend />
+                                    <Line type="monotone" dataKey="revenue" stroke="#10b981" name="Revenue" />
+                                </LineChart>
+                            </ResponsiveContainer>
                         </CardContent>
                     </Card>
 
@@ -147,19 +152,16 @@ export default function ReportsIndex() {
                             <CardTitle>Top Restaurants by Orders</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <BarChart
-                                data={{
-                                    data: reports.top_restaurants.map(item => item.orders),
-                                    labels: reports.top_restaurants.map(item => item.name),
-                                    datasets: [
-                                        {
-                                            label: 'Number of Orders',
-                                            data: reports.top_restaurants.map(item => item.orders),
-                                            backgroundColor: '#3b82f6',
-                                        },
-                                    ],
-                                }}
-                            />
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={reports.top_restaurants}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar dataKey="orders" fill="#3b82f6" name="Number of Orders" />
+                                </BarChart>
+                            </ResponsiveContainer>
                         </CardContent>
                     </Card>
                 </div>

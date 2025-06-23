@@ -17,10 +17,10 @@ class FoodOrder extends Model
         'customer_address_id',
         'order_status_id',
         'assigned_driver_id',
-        'order_datetime',
+        'order_date_time',
         'delivery_fee',
         'total_amount',
-        'requested_delivery_datetime',
+        'requested_delivery_date_time',
         'customer_driver_rating',
         'customer_restaurant_rating',
     ];

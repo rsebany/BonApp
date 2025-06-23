@@ -37,6 +37,7 @@ export interface NavItem {
     isActive?: boolean;
     method?: 'get' | 'post' | 'put' | 'patch' | 'delete';
     as?: 'a' | 'button';
+    children?: NavItem[];
 }
 export interface SharedData {
     name: string;
@@ -45,9 +46,54 @@ export interface SharedData {
     ziggy: Config & { location: string };
     sidebarOpen: boolean;
     [key: string]: unknown;
+    featuredRestaurants: BackendRestaurant[];
+    popularCategories: PopularCategory[];
+    localFavorites: BackendRestaurant[];
 }
     
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+}
+
+export interface Country {
+    id: number;
+    country_name: string;
+    country_code: string;
+}
+
+export interface Address {
+    id: number;
+    address_line1: string;
+    address_line2: string | null;
+    city: string;
+    region: string;
+    postal_code: string;
+    country: Country;
+}
+
+export interface BackendRestaurant {
+    id: number;
+    restaurant_name: string;
+    description: string;
+    cuisine_type: string;
+    delivery_time: string;
+    address: Address;
+}
+
+export interface Restaurant extends BackendRestaurant {
+    rating: number; 
+    priceRange: string;
+    image: string;
+    tags: string[];
+    featuredDish: string;
+    distance: string;
+}
+
+export interface PopularCategory {
+    id: number;
+    name: string;
+    count: number;
+    icon: string;
+    image: string;
 }

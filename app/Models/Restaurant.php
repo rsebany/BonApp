@@ -1,11 +1,11 @@
 <?php
 
-// app/Models/Restaurant.php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Restaurant extends Model
@@ -22,85 +22,51 @@ class Restaurant extends Model
         'delivery_time',
         'minimum_order',
         'delivery_fee',
-        'image_path',
         'is_active',
         'address_id',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'delivery_time' => 'integer',
+        'opening_hours' => 'array',
         'minimum_order' => 'decimal:2',
         'delivery_fee' => 'decimal:2',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
-    // Relationships
-    public function address()
+    public function address(): BelongsTo
     {
         return $this->belongsTo(Address::class);
     }
 
-    public function menuItems()
+    public function menuItems(): HasMany
     {
         return $this->hasMany(MenuItem::class);
     }
 
-    public function orders()
+    public function orders(): HasMany
     {
         return $this->hasMany(FoodOrder::class);
     }
 
-    // Accessors
-    public function getImageUrlAttribute()
-    {
-        if ($this->image_path) {
-            return asset('storage/' . $this->image_path);
-        }
-        return asset('images/default-restaurant.png');
-    }
-
-    public function getFullAddressAttribute()
-    {
-        if (!$this->address) {
-            return '';
-        }
-
-        $parts = array_filter([
-            $this->address->unit_number,
-            $this->address->street_number,
-            $this->address->address_line1,
-            $this->address->address_line2,
-            $this->address->city,
-            $this->address->region,
-            $this->address->postal_code,
-            $this->address->country->country_name ?? '',
-        ]);
-
-        return implode(', ', $parts);
-    }
-
-    // Scopes
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
     }
 
-    public function scopeInactive($query)
+    public function getFullAddressAttribute()
     {
-        return $query->where('is_active', false);
-    }
-
-    public function scopeByCity($query, $city)
-    {
-        return $query->whereHas('address', function ($q) use ($city) {
-            $q->where('city', 'like', "%{$city}%");
-        });
-    }
-
-    public function scopeByCuisine($query, $cuisine)
-    {
-        return $query->where('cuisine_type', 'like', "%{$cuisine}%");
+        if (!$this->address) return null;
+        
+        $address = $this->address;
+        $parts = [
+            $address->address_line1,
+            $address->address_line2,
+            $address->city,
+            $address->region,
+            $address->postal_code,
+            $address->country->country_name ?? null
+        ];
+        
+        return implode(', ', array_filter($parts));
     }
 }

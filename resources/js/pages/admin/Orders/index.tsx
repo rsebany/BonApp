@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Plus, Filter, MoreHorizontal, Eye, Edit, Trash2, Search, ArrowUpDown, ArrowUp, ArrowDown, BarChart, MapPin, Clock } from 'lucide-react';
+import { Plus, Filter, MoreHorizontal, Edit, Trash2, Search, ArrowUpDown, ArrowUp, ArrowDown, BarChart, MapPin, Clock, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Badge, Button, Card, Input, Label } from '@/components/ui';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -242,6 +242,56 @@ export default function OrdersIndex({ orders, orderStatuses, restaurants, filter
       'cancelled': 'bg-red-100 text-red-800',
     };
     return statusColors[status.toLowerCase()] || 'bg-gray-100 text-gray-800';
+  };
+
+  const handlePageChange = (page: number) => {
+    router.get(route('admin.orders.index'), {
+      ...localFilters,
+      page,
+    }, {
+      preserveState: true,
+      preserveScroll: true,
+    });
+  };
+
+  const handlePageSizeChange = (perPage: number) => {
+    router.get(route('admin.orders.index'), {
+      ...localFilters,
+      per_page: perPage,
+      page: 1, // Reset to first page when changing page size
+    }, {
+      preserveState: true,
+      preserveScroll: true,
+    });
+  };
+
+  const getVisiblePages = () => {
+    const current = orders.current_page;
+    const last = orders.last_page;
+    const delta = 2; // Number of pages to show on each side of current page
+    
+    const range = [];
+    const rangeWithDots = [];
+    
+    for (let i = Math.max(2, current - delta); i <= Math.min(last - 1, current + delta); i++) {
+      range.push(i);
+    }
+    
+    if (current - delta > 2) {
+      rangeWithDots.push(1, '...');
+    } else {
+      rangeWithDots.push(1);
+    }
+    
+    rangeWithDots.push(...range);
+    
+    if (current + delta < last - 1) {
+      rangeWithDots.push('...', last);
+    } else if (last > 1) {
+      rangeWithDots.push(last);
+    }
+    
+    return rangeWithDots;
   };
 
   return (
@@ -520,7 +570,7 @@ export default function OrdersIndex({ orders, orderStatuses, restaurants, filter
                       </div>
                     </TableCell>
                     <TableCell>{order.restaurant.restaurant_name}</TableCell>
-                    <TableCell>{order.total_amount}</TableCell>
+                    <TableCell>${order.total_amount}</TableCell>
                     <TableCell>${order.delivery_fee}</TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(order.status?.toLowerCase())}>
@@ -540,69 +590,68 @@ export default function OrdersIndex({ orders, orderStatuses, restaurants, filter
                       {new Date(order.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={route('admin.orders.show', order.id)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={route('admin.orders.tracking', order.id)}>
-                              <MapPin className="h-4 w-4 mr-2" />
-                              Track
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={route('admin.orders.history', order.id)}>
-                              <Clock className="h-4 w-4 mr-2" />
-                              History
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={route('admin.orders.edit', order.id)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </Link>
-                          </DropdownMenuItem>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Order</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete this order? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => {
-                                    router.delete(route('admin.orders.destroy', order.id), {
-                                      onError: () => {
-                                        setError('Failed to delete order. Please try again.');
-                                      },
-                                    });
-                                  }}
-                                >
+                      <div className="flex items-center space-x-2">
+                        <Link href={route('admin.orders.show', order.id)} className="text-blue-600 hover:underline">
+                          View
+                        </Link>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link href={route('admin.orders.tracking', order.id)}>
+                                <MapPin className="h-4 w-4 mr-2" />
+                                Track
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link href={route('admin.orders.history', order.id)}>
+                                <Clock className="h-4 w-4 mr-2" />
+                                History
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link href={route('admin.orders.edit', order.id)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </Link>
+                            </DropdownMenuItem>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <Trash2 className="h-4 w-4 mr-2" />
                                   Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Order</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this order? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => {
+                                      router.delete(route('admin.orders.destroy', order.id), {
+                                        onError: () => {
+                                          setError('Failed to delete order. Please try again.');
+                                        },
+                                      });
+                                    }}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -613,31 +662,120 @@ export default function OrdersIndex({ orders, orderStatuses, restaurants, filter
 
         {/* Pagination */}
         {orders.links.length > 3 && (
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              Showing {orders.data.length} of {orders.total} orders
-            </div>
-            <div className="flex items-center gap-2">
-              {orders.links.map((link, i) => (
-                <Button
-                  key={i}
-                  variant={link.active ? "default" : "outline"}
-                  size="sm"
-                  disabled={!link.url}
-                  onClick={() => {
-                    if (link.url) {
-                      router.get(link.url, {}, {
-                        preserveState: true,
-                        preserveScroll: true,
-                      });
-                    }
-                  }}
-                >
-                  {link.label}
-                </Button>
-              ))}
-            </div>
-          </div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                {/* Page Info */}
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div>
+                    Showing <span className="font-medium">{((orders.current_page - 1) * orders.per_page) + 1}</span> to{' '}
+                    <span className="font-medium">
+                      {Math.min(orders.current_page * orders.per_page, orders.total)}
+                    </span> of{' '}
+                    <span className="font-medium">{orders.total}</span> orders
+                  </div>
+                  
+                  {/* Page Size Selector */}
+                  <div className="flex items-center gap-2">
+                    <span>Show:</span>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 w-16">
+                          {orders.per_page}
+                          <ChevronsUpDown className="ml-1 h-3 w-3" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-16 p-0" align="start">
+                        <div className="flex flex-col">
+                          {[10, 25, 50, 100].map((size) => (
+                            <Button
+                              key={size}
+                              variant="ghost"
+                              size="sm"
+                              className={cn(
+                                "h-8 justify-center text-sm",
+                                orders.per_page === size && "bg-accent"
+                              )}
+                              onClick={() => handlePageSizeChange(size)}
+                            >
+                              {size}
+                            </Button>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="flex items-center gap-1">
+                  {/* First Page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    disabled={orders.current_page === 1}
+                    onClick={() => handlePageChange(1)}
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+
+                  {/* Previous Page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    disabled={orders.current_page === 1}
+                    onClick={() => handlePageChange(orders.current_page - 1)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {getVisiblePages().map((page, index) => (
+                      <React.Fragment key={index}>
+                        {page === '...' ? (
+                          <span className="px-2 py-1 text-sm text-gray-500">...</span>
+                        ) : (
+                          <Button
+                            variant={page === orders.current_page ? "default" : "outline"}
+                            size="sm"
+                            className="h-8 w-8 p-0 text-sm"
+                            onClick={() => handlePageChange(page as number)}
+                          >
+                            {page}
+                          </Button>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
+
+                  {/* Next Page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    disabled={orders.current_page === orders.last_page}
+                    onClick={() => handlePageChange(orders.current_page + 1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+
+                  {/* Last Page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    disabled={orders.current_page === orders.last_page}
+                    onClick={() => handlePageChange(orders.last_page)}
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </AdminLayout>

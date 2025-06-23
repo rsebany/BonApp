@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import axios from 'axios';
 
 interface OrderPayload {
   customer_id: string;
@@ -71,7 +70,7 @@ interface Restaurant {
 
 interface OrderStatus {
   id: number;
-  status: string;
+  name: string;
 }
 
 interface Driver {
@@ -147,40 +146,79 @@ export default function OrderEdit({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [loadingMenuItems, setLoadingMenuItems] = useState(false);
-  const [customerAddresses, setCustomerAddresses] = useState<Address[]>(initialOrder.customer.addresses || []);
+  
+  // Initialize customer addresses with the order's current address
+  const initialCustomerAddresses = initialOrder.customer.addresses || [];
+  const orderAddress = initialOrder.customerAddress;
+  
+  // Add the order's address if it's not already in the customer's addresses
+  let allAddresses = [...initialCustomerAddresses];
+  if (orderAddress && !allAddresses.find(addr => addr.id === orderAddress.id)) {
+    allAddresses = [...allAddresses, orderAddress];
+  }
+  
+  const [customerAddresses, setCustomerAddresses] = useState<Address[]>(allAddresses);
 
-  // Fetch menu items when restaurant changes
+  // Set menu items when restaurant changes
   useEffect(() => {
     if (formData.restaurant_id) {
-      setLoadingMenuItems(true);
-      axios.get(`/admin/restaurants/${formData.restaurant_id}/menu-items`)
-        .then(response => {
-          setMenuItems(response.data);
-          setLoadingMenuItems(false);
-        })
-        .catch(error => {
-          console.error('Error fetching menu items:', error);
-          setMenuItems([]);
-          setLoadingMenuItems(false);
-        });
+      const selectedRestaurant = restaurants.find(r => r.id === Number(formData.restaurant_id));
+      setMenuItems(selectedRestaurant?.menu_items || []);
     } else {
       setMenuItems([]);
     }
-  }, [formData.restaurant_id]);
+  }, [formData.restaurant_id, restaurants]);
 
   // Update customer addresses when customer changes
   useEffect(() => {
     if (formData.customer_id) {
       const customer = customers.find(c => c.id === Number(formData.customer_id));
-      setCustomerAddresses(customer?.addresses || []);
+      const customerAddresses = customer?.addresses || [];
+      
+      // If this is the same customer as the order, include the order's address
+      let allAddresses = [...customerAddresses];
+      if (Number(formData.customer_id) === initialOrder.customer_id && initialOrder.customerAddress) {
+        const orderAddress = initialOrder.customerAddress;
+        if (!allAddresses.find(addr => addr.id === orderAddress.id)) {
+          allAddresses = [...allAddresses, orderAddress];
+        }
+      }
+      
+      setCustomerAddresses(allAddresses);
+      
+      // Only update customer_address_id if it's empty or if the customer has changed
+      // and the current address doesn't belong to the new customer
+      const currentAddressId = Number(formData.customer_address_id);
+      const customerHasAddress = allAddresses.some(addr => addr.id === currentAddressId);
+      
+      if (!formData.customer_address_id || !customerHasAddress) {
+        setFormData(prev => ({ 
+          ...prev, 
+          customer_address_id: allAddresses[0]?.id.toString() || '' 
+        }));
+      }
+    } else {
+      setCustomerAddresses([]);
+      setFormData(prev => ({ ...prev, customer_address_id: '' }));
     }
-  }, [formData.customer_id, customers]);
+  }, [formData.customer_id, customers, initialOrder.customer_id, initialOrder.customerAddress]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrors({});
+
+    console.log('Form data before validation:', formData);
+    console.log('Customer addresses available:', customerAddresses);
+
+    // Validate that customer_address_id is selected
+    if (!formData.customer_address_id) {
+      console.log('No customer address selected, showing error');
+      setErrors({ customer_address_id: 'Please select a delivery address' });
+      toast.error('Please select a delivery address');
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const payload = {
@@ -188,15 +226,25 @@ export default function OrderEdit({
         items: JSON.stringify(formData.items),
       };
       
+      console.log('Submitting order update with payload:', payload);
+      console.log('Route:', route('admin.orders.update', initialOrder.id));
+      
       router.put(route('admin.orders.update', initialOrder.id), payload, {
-        onSuccess: () => {
+        onSuccess: (page) => {
+          console.log('Order update successful:', page);
           toast.success('Order updated successfully');
+          // Use Inertia router to redirect to index page
+          router.visit(route('admin.orders.index'));
         },
         onError: (errors) => {
+          console.error('Order update failed with errors:', errors);
           setErrors(errors as Record<string, string>);
           toast.error('Failed to update order');
         },
-        onFinish: () => setIsSubmitting(false),
+        onFinish: () => {
+          console.log('Order update request finished');
+          setIsSubmitting(false);
+        },
       });
     } catch (error) {
       console.error('Error updating order:', error);
@@ -310,9 +358,9 @@ export default function OrderEdit({
               </div>
 
               {/* Customer Address Selection */}
-              {customerAddresses.length > 0 && (
-                <div className="space-y-2">
-                  <Label htmlFor="customer_address_id">Delivery Address *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="customer_address_id">Delivery Address *</Label>
+                {customerAddresses.length > 0 ? (
                   <select
                     id="customer_address_id"
                     value={formData.customer_address_id}
@@ -333,11 +381,15 @@ export default function OrderEdit({
                       </option>
                     ))}
                   </select>
-                  {errors.customer_address_id && (
-                    <p className="text-sm text-red-500">{errors.customer_address_id}</p>
-                  )}
-                </div>
-              )}
+                ) : (
+                  <div className="text-sm text-red-500 p-2 border border-red-200 rounded bg-red-50">
+                    No addresses found for this customer. Please add an address for the customer first.
+                  </div>
+                )}
+                {errors.customer_address_id && (
+                  <p className="text-sm text-red-500">{errors.customer_address_id}</p>
+                )}
+              </div>
 
               {/* Restaurant Selection */}
               <div className="space-y-2">
@@ -374,7 +426,7 @@ export default function OrderEdit({
                   <option value="">Select an order status</option>
                   {orderStatuses?.map(status => (
                     <option key={status.id} value={status.id}>
-                      {status.status}
+                      {status.name}
                     </option>
                   ))}
                 </select>
@@ -446,7 +498,6 @@ export default function OrderEdit({
                     onClick={handleAddItem} 
                     variant="outline" 
                     size="sm"
-                    disabled={!formData.restaurant_id || loadingMenuItems}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Item

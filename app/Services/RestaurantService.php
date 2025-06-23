@@ -9,15 +9,31 @@ use Illuminate\Support\Facades\Gate;
 
 class RestaurantService
 {
-    public function getAllRestaurants(User $user): Collection
+    public function getAllRestaurants(User $user = null, string $searchTerm = null): Collection
     {
-        if ($user->isAdmin()) {
-            return Restaurant::with(['address', 'menuItems'])->get();
+        $query = Restaurant::query()->with(['address.country']);
+
+        if ($searchTerm) {
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('restaurant_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('cuisine_type', 'like', "%{$searchTerm}%");
+            });
         }
 
-        return Restaurant::whereHas('orders', function($query) use ($user) {
-            $query->where('customer_id', $user->id);
-        })->with(['address', 'menuItems'])->get();
+        if ($user) {
+            if ($user->isAdmin()) {
+                // Admin sees all
+            } else {
+                // Non-admin user logic (if any)
+                // For now, let's assume they can search all active restaurants.
+                $query->where('is_active', true);
+            }
+        } else {
+            // Unauthenticated user
+            $query->where('is_active', true);
+        }
+        
+        return $query->get();
     }
 
     public function createRestaurant(User $user, array $data): Restaurant
@@ -49,6 +65,6 @@ class RestaurantService
     {
         Gate::authorize('view', $restaurant);
         
-        return $restaurant->menuItems;
+        return $restaurant->menuItems()->get();
     }
 }

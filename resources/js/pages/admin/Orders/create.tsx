@@ -26,64 +26,36 @@ interface OrderPayload {
   }>;
 }
 
-interface RestaurantAddress {
-  street_number?: string;
-  address_line1?: string;
-  city?: string;
-  region?: string;
-  postal_code?: string;
-}
-
-interface MenuItem {
+interface Restaurant {
   id: number;
-  item_name: string;
-  price: string;
-  restaurant_id: number;
+  restaurant_name: string;
+  menu_items: Array<{
+    id: number;
+    item_name: string;
+    price: string;
+  }>;
 }
 
 interface Customer {
   id: number;
-  name: string;
-  last_name: string;
   first_name: string;
+  last_name: string;
   email: string;
-  addresses: Address[];
-}
-
-interface Address {
-  id: number;
-  street_number?: string;
-  address_line1?: string;
-  city?: string;
-  region?: string;
-  postal_code?: string;
-}
-
-interface Restaurant {
-  id: number;
-  name: string;
-  address_id: string;
-  restaurant_name: string;
-  address: RestaurantAddress | null;
-  menu_items: MenuItem[];
-}
-
-interface OrderStatus {
-  id: number;
-  status: string;
-}
-
-interface Driver {
-  id: number;
-  first_name: string;
-  last_name: string;
+  addresses: Array<{
+    id: number;
+    street_number?: string;
+    address_line1?: string;
+    city?: string;
+    region?: string;
+    postal_code?: string;
+  }>;
 }
 
 interface OrderCreateProps {
   customers: Customer[];
   restaurants: Restaurant[];
-  orderStatuses: OrderStatus[];
-  drivers: Driver[];
+  orderStatuses: Array<{ id: number; status: string }>;
+  drivers: Array<{ id: number; first_name: string; last_name: string }>;
 }
 
 export default function OrderCreate({ 
@@ -107,9 +79,15 @@ export default function OrderCreate({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [loadingMenuItems] = useState(false);
-  const [customerAddresses, setCustomerAddresses] = useState<Address[]>([]);
+  const [menuItems, setMenuItems] = useState<Restaurant['menu_items']>([]);
+  const [customerAddresses, setCustomerAddresses] = useState<Customer['addresses']>([]);
+  const [manualAddress, setManualAddress] = useState({
+    street_number: '',
+    address_line1: '',
+    city: '',
+    region: '',
+    postal_code: '',
+  });
 
   useEffect(() => {
     if (formData.restaurant_id) {
@@ -138,11 +116,10 @@ export default function OrderCreate({
     setFormData(prev => ({
       ...prev,
       [field]: value,
-      ...(field === 'restaurant_id' && { items: [] }) // Clear items when restaurant changes
+      ...(field === 'restaurant_id' && { items: [] })
     }));
   };
 
-  
   const handleAddItem = () => {
     setFormData(prev => ({
       ...prev,
@@ -172,46 +149,114 @@ export default function OrderCreate({
     e.preventDefault();
     setIsSubmitting(true);
     setErrors({});
-
+  
+    // Validate required fields
+    if (!formData.customer_id) {
+      setErrors(prev => ({ ...prev, customer_id: 'Customer is required' }));
+      setIsSubmitting(false);
+      toast.error('Customer is required');
+      return;
+    }
+  
+    if (!formData.restaurant_id) {
+      setErrors(prev => ({ ...prev, restaurant_id: 'Restaurant is required' }));
+      setIsSubmitting(false);
+      toast.error('Restaurant is required');
+      return;
+    }
+  
+    if (!formData.order_status_id) {
+      setErrors(prev => ({ ...prev, order_status_id: 'Order status is required' }));
+      setIsSubmitting(false);
+      toast.error('Order status is required');
+      return;
+    }
+  
+    // Validate items
+    if (formData.items.length === 0) {
+      setErrors(prev => ({ ...prev, items: 'At least one order item is required' }));
+      setIsSubmitting(false);
+      toast.error('At least one order item is required');
+      return;
+    }
+  
+    const invalidItem = formData.items.some(
+      item =>
+        !item.menu_item_id ||
+        isNaN(Number(item.quantity)) ||
+        Number(item.quantity) <= 0 ||
+        isNaN(Number(item.price)) ||
+        Number(item.price) <= 0 ||
+        isNaN(Number(item.subtotal))
+    );
+    if (invalidItem) {
+      setErrors(prev => ({ ...prev, items: 'All order items must be valid and complete' }));
+      setIsSubmitting(false);
+      toast.error('Please fix the order items');
+      return;
+    }
+  
+    // Validate address
+    if (customerAddresses.length === 0) {
+      const missingFields = Object.entries(manualAddress).filter(([, v]) => !v);
+      if (missingFields.length > 0) {
+        setErrors(prev => ({ ...prev, customer_address_id: 'Please fill in all delivery address fields' }));
+        setIsSubmitting(false);
+        toast.error('Please fill in all delivery address fields');
+        return;
+      }
+    } else if (!formData.customer_address_id) {
+      setErrors(prev => ({ ...prev, customer_address_id: 'Please select a delivery address' }));
+      setIsSubmitting(false);
+      toast.error('Please select a delivery address');
+      return;
+    }
+  
     try {
-      const items = formData.items.map(item => ({
-        ...item,
-        menu_item_id: Number(item.menu_item_id),
-        quantity: Number(item.quantity),
-        price: Number(item.price),
-        subtotal: Number(item.subtotal),
-      }));
-
       const payload = {
-        ...formData,
         customer_id: Number(formData.customer_id),
         restaurant_id: Number(formData.restaurant_id),
-        customer_address_id: Number(formData.customer_address_id),
         order_status_id: Number(formData.order_status_id),
         assigned_driver_id: formData.assigned_driver_id ? Number(formData.assigned_driver_id) : null,
+        order_date_time: formData.order_date_time,
+        requested_delivery_date_time: formData.requested_delivery_date_time,
         delivery_fee: Number(formData.delivery_fee),
         total_amount: Number(formData.total_amount),
-        items: items,
+        items: formData.items.map(item => ({
+          menu_item_id: Number(item.menu_item_id),
+          quantity: Number(item.quantity),
+          price: Number(item.price),
+          subtotal: Number(item.subtotal),
+        })),
+        ...(customerAddresses.length === 0
+          ? { 
+              address_line1: manualAddress.address_line1,
+              street_number: manualAddress.street_number,
+              city: manualAddress.city,
+              region: manualAddress.region,
+              postal_code: manualAddress.postal_code
+            }
+          : { customer_address_id: Number(formData.customer_address_id) })
       };
-
-      router.post(route('admin.orders.store'), payload, {
-        preserveScroll: true,
+  
+      await router.post(route('admin.orders.store'), payload, {
         onSuccess: () => {
           toast.success('Order created successfully');
-          router.visit(route('admin.orders.index'), {
-            only: ['orders'], // Only reload the orders data
-            preserveScroll: true,
-          });
         },
         onError: (errors) => {
           setErrors(errors);
-          toast.error('Failed to create order');
+          if (errors.message) {
+            toast.error(errors.message);
+          } else {
+            toast.error('Failed to create order. Please check the form for errors.');
+          }
         },
-        onFinish: () => setIsSubmitting(false),
+        preserveScroll: true
       });
     } catch (error) {
       console.error('Error creating order:', error);
       toast.error('An unexpected error occurred');
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -221,14 +266,12 @@ export default function OrderCreate({
       const newItems = [...prev.items];
       newItems[index] = { ...newItems[index], [field]: value.toString() };
 
-      // Calculate subtotal if quantity or price changes
       if (field === 'quantity' || field === 'price') {
         const quantity = field === 'quantity' ? Number(value) : Number(newItems[index].quantity);
         const price = field === 'price' ? Number(value) : Number(newItems[index].price);
         newItems[index].subtotal = (quantity * price).toFixed(2);
       }
 
-      // Calculate total amount
       const subtotal = newItems.reduce((sum, item) => sum + Number(item.subtotal), 0);
       const deliveryFee = Number(prev.delivery_fee) || 0;
       const totalAmount = (subtotal + deliveryFee).toFixed(2);
@@ -317,6 +360,46 @@ export default function OrderCreate({
                 </div>
               )}
 
+              {/* Manual Address Entry */}
+              {customerAddresses.length === 0 && formData.customer_id && (
+                <div className="space-y-2">
+                  <Label>Delivery Address (Manual Entry) *</Label>
+                  <Input
+                    placeholder="Street Number"
+                    value={manualAddress.street_number}
+                    onChange={e => setManualAddress({ ...manualAddress, street_number: e.target.value })}
+                    required
+                  />
+                  <Input
+                    placeholder="Address Line 1"
+                    value={manualAddress.address_line1}
+                    onChange={e => setManualAddress({ ...manualAddress, address_line1: e.target.value })}
+                    required
+                  />
+                  <Input
+                    placeholder="City"
+                    value={manualAddress.city}
+                    onChange={e => setManualAddress({ ...manualAddress, city: e.target.value })}
+                    required
+                  />
+                  <Input
+                    placeholder="Region"
+                    value={manualAddress.region}
+                    onChange={e => setManualAddress({ ...manualAddress, region: e.target.value })}
+                    required
+                  />
+                  <Input
+                    placeholder="Postal Code"
+                    value={manualAddress.postal_code}
+                    onChange={e => setManualAddress({ ...manualAddress, postal_code: e.target.value })}
+                    required
+                  />
+                  {errors.customer_address_id && (
+                    <p className="text-sm text-red-500">{errors.customer_address_id}</p>
+                  )}
+                </div>
+              )}
+
               {/* Restaurant Selection */}
               <div className="space-y-2">
                 <Label htmlFor="restaurant_id">Restaurant *</Label>
@@ -330,7 +413,7 @@ export default function OrderCreate({
                   <option value="">Select a restaurant</option>
                   {restaurants.map(restaurant => (
                     <option key={restaurant.id} value={restaurant.id}>
-                      {restaurant.restaurant_name} - {restaurant.address?.city || 'No address'}
+                      {restaurant.restaurant_name}
                     </option>
                   ))}
                 </select>
@@ -377,9 +460,6 @@ export default function OrderCreate({
                     </option>
                   ))}
                 </select>
-                {errors.assigned_driver_id && (
-                  <p className="text-sm text-red-500">{errors.assigned_driver_id}</p>
-                )}
               </div>
 
               {/* Delivery Date/Time */}
@@ -391,9 +471,6 @@ export default function OrderCreate({
                   value={formData.requested_delivery_date_time.substring(0, 16)}
                   onChange={(e) => handleSelectChange('requested_delivery_date_time', e.target.value)}
                 />
-                {errors.requested_delivery_date_time && (
-                  <p className="text-sm text-red-500">{errors.requested_delivery_date_time}</p>
-                )}
               </div>
 
               {/* Order Items */}
@@ -405,7 +482,7 @@ export default function OrderCreate({
                     onClick={handleAddItem} 
                     variant="outline" 
                     size="sm"
-                    disabled={!formData.restaurant_id || loadingMenuItems}
+                    disabled={!formData.restaurant_id}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Item
@@ -508,16 +585,12 @@ export default function OrderCreate({
                   value={formData.delivery_fee}
                   onChange={(e) => {
                     handleSelectChange('delivery_fee', e.target.value);
-                    // Recalculate total amount
                     const subtotal = formData.items.reduce((sum, item) => sum + Number(item.subtotal), 0);
                     const deliveryFee = Number(e.target.value) || 0;
                     handleSelectChange('total_amount', (subtotal + deliveryFee).toFixed(2));
                   }}
                   required
                 />
-                {errors.delivery_fee && (
-                  <p className="text-sm text-red-500">{errors.delivery_fee}</p>
-                )}
               </div>
 
               {/* Total Amount */}
@@ -530,14 +603,14 @@ export default function OrderCreate({
                   readOnly
                   className="bg-gray-50 font-bold"
                 />
-                {errors.total_amount && (
-                  <p className="text-sm text-red-500">{errors.total_amount}</p>
-                )}
               </div>
 
               {/* Submit Button */}
               <div className="pt-4">
-                <Button type="submit" disabled={isSubmitting || formData.items.length === 0}>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? 'Creating...' : 'Create Order'}
                 </Button>
               </div>

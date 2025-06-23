@@ -16,22 +16,19 @@ class StoreRestaurantRequest extends FormRequest
     public function rules()
     {
         return [
-            'restaurant_name' => 'required|string|max:100|unique:restaurants,restaurant_name',
+            'restaurant_name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:restaurants,email',
             'phone' => 'required|string|max:20',
-            'description' => 'nullable|string|max:1000',
-            'cuisine_type' => 'required|string|max:100',
-            'opening_hours' => 'required|string|max:255',
-            'delivery_time' => 'required|integer|min:1|max:120',
+            'description' => 'nullable|string',
+            'cuisine_type' => 'required|string|max:255',
+            'opening_hours' => 'required|array',
+            'delivery_time' => 'required|string|max:50',
             'minimum_order' => 'required|numeric|min:0',
             'delivery_fee' => 'required|numeric|min:0',
             'is_active' => 'boolean',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             
-            // Address validation
-            'address' => 'required|array',
-            'address.unit_number' => 'nullable|string|max:10',
-            'address.street_number' => 'nullable|string|max:10',
+            'address.unit_number' => 'nullable|string|max:20',
+            'address.street_number' => 'nullable|string|max:20',
             'address.address_line1' => 'required|string|max:255',
             'address.address_line2' => 'nullable|string|max:255',
             'address.city' => 'required|string|max:100',
@@ -56,10 +53,6 @@ class StoreRestaurantRequest extends FormRequest
             'delivery_time.max' => 'Delivery time cannot exceed 120 minutes.',
             'minimum_order.required' => 'Minimum order amount is required.',
             'delivery_fee.required' => 'Delivery fee is required.',
-            'image.image' => 'The uploaded file must be an image.',
-            'image.mimes' => 'The image must be a file of type: jpeg, png, jpg, gif.',
-            'image.max' => 'The image size cannot exceed 2MB.',
-            
             // Address messages
             'address.required' => 'Address information is required.',
             'address.address_line1.required' => 'Address line 1 is required.',

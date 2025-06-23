@@ -1,489 +1,203 @@
-import React, { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
-import AdminLayout from '@/layouts/Admin/AdminLayout';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Plus, Filter, MoreHorizontal, Eye, Edit, Trash2, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { Badge, Button, Card, Input, Label } from '@/components/ui';
-import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { ChevronsUpDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import AdminLayout from "@/layouts/Admin/AdminLayout";
+import { Head, Link, router } from "@inertiajs/react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import * as Dropdown from "@radix-ui/react-dropdown-menu";
+import React from "react";
+import { MoreHorizontal, Eye, Edit, Trash2, Plus, CheckCircle, XCircle } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 interface Restaurant {
-  id: number;
-  restaurant_name: string;
-  email: string;
-  phone: string;
-  is_active: boolean;
-  created_at: string;
-  address?: {
-    address_line1?: string;
-    city?: string;
-    region?: string;
-    country?: {
-      country_name?: string;
+    id: number;
+    restaurant_name: string;
+    email: string;
+    phone: string;
+    cuisine_type: string;
+    is_active: boolean;
+    address?: {
+        city?: string;
     };
-  };
+    created_at: string;
 }
 
-interface PageProps {
-  restaurants: {
-    data: Restaurant[];
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    total: number;
-    links: Array<{
-      url: string | null;
-      label: string;
-      active: boolean;
-    }>;
-  };
-  cities: string[];
-  filters: {
-    search?: string;
-    is_active?: boolean;
-    city?: string;
-    sort?: string;
-    direction?: string;
-  };
-  user?: {
-    role: string;
-  };
+interface Props {
+    restaurants: Restaurant[];
+    cities: string[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    filters: Record<string, any>;
 }
 
-export default function RestaurantsIndex({ restaurants, cities, filters, user }: PageProps) {
-  const [selectedRestaurants, setSelectedRestaurants] = useState<number[]>([]);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [localFilters, setLocalFilters] = useState(filters);
-  const [error, setError] = useState<string | null>(null);
+export default function RestaurantsIndex({ restaurants = [], cities = [], filters = {} }: Props) {
+    const [dialogOpen, setDialogOpen] = React.useState<number | null>(null);
+    const [restaurantToDelete, setRestaurantToDelete] = React.useState<Restaurant | null>(null);
+    const [isDeleting, setIsDeleting] = React.useState<number | null>(null);
+    const [deleteError, setDeleteError] = React.useState<string | null>(null);
+    const [search, setSearch] = React.useState(filters.search || "");
+    const [city, setCity] = React.useState(filters.city || "");
+    const [status, setStatus] = React.useState(filters.is_active || "");
 
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedRestaurants(restaurants.data.map(restaurant => restaurant.id));
-    } else {
-      setSelectedRestaurants([]);
-    }
-  };
+    const restaurantList: Restaurant[] = Array.isArray(restaurants)
+        ? restaurants
+        : (restaurants.data ?? []);
 
-  const handleSelectRestaurant = (restaurantId: number) => {
-    setSelectedRestaurants(prev => {
-      if (prev.includes(restaurantId)) {
-        return prev.filter(id => id !== restaurantId);
-      }
-      return [...prev, restaurantId];
-    });
-  };
+    console.log('restaurants prop:', restaurants);
 
-  const handleBulkDelete = async () => {
-    if (!selectedRestaurants.length) return;
-
-    setIsDeleting(true);
-    try {
-      await router.delete(route('admin.restaurants.bulk-delete'), {
-        data: { restaurant_ids: selectedRestaurants },
-      });
-      setSelectedRestaurants([]);
-    } catch (error) {
-      console.error('Failed to delete restaurants:', error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleFilterChange = (name: string, value: string | boolean) => {
-    setLocalFilters(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    router.get(route('admin.restaurants.index'), localFilters, {
-      preserveState: true,
-      preserveScroll: true,
-    });
-  };
-
-  const handleSort = (column: string) => {
-    const direction = localFilters.sort === column && localFilters.direction === 'asc' ? 'desc' : 'asc';
-    setLocalFilters(prev => ({
-      ...prev,
-      sort: column,
-      direction,
-    }));
-    router.get(route('admin.restaurants.index'), {
-      ...localFilters,
-      sort: column,
-      direction,
-    }, {
-      preserveState: true,
-      preserveScroll: true,
-      onError: () => {
-        setError('Failed to sort restaurants. Please try again.');
-      },
-    });
-  };
-
-  const getSortIcon = (column: string) => {
-    if (localFilters.sort !== column) return <ArrowUpDown className="h-4 w-4" />;
-    return localFilters.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
-  };
-
-  const toggleStatus = async (restaurantId: number, currentStatus: boolean) => {
-    try {
-      await router.put(route('admin.restaurants.update-status', restaurantId), {
-        is_active: !currentStatus,
-      });
-    } catch (error) {
-      console.error('Failed to update restaurant status:', error);
-    }
-  };
-
-  return (
-    <AdminLayout title="Restaurants Management">
-      <Head title="Restaurants" />
-
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold py-2 px-2">Restaurants</h1>
-            <p className="text-gray-600 px-2">Manage partner restaurants</p>
-          </div>
-          <div className="flex items-center gap-2 pt-2">
-            {selectedRestaurants.length > 0 && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" disabled={isDeleting}>
-                    {isDeleting ? 'Deleting...' : 'Delete Selected'}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Restaurants</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete {selectedRestaurants.length} selected restaurants? This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleBulkDelete}>
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-            {user?.role === 'admin' && (
-              <Button asChild className="bg-green-600 hover:bg-green-700">
-                <Link href={route('admin.restaurants.create')}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Restaurant
-                </Link>
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filters
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSearch} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label>Search</Label>
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
-                    <Input
-                      placeholder="Search by name, email or phone..."
-                      value={localFilters.search || ''}
-                      onChange={(e) => handleFilterChange('search', e.target.value)}
-                      className="pl-8"
-                    />
-                  </div>
+    const openDeleteDialog = (restaurant: Restaurant) => {
+        setRestaurantToDelete(restaurant);
+        setDialogOpen(restaurant.id);
+        setDeleteError(null);
+    };
+    const closeDeleteDialog = () => {
+        setDialogOpen(null);
+        setRestaurantToDelete(null);
+        setDeleteError(null);
+    };
+    const handleDelete = async () => {
+        if (!restaurantToDelete) return;
+        setIsDeleting(restaurantToDelete.id);
+        setDeleteError(null);
+        router.delete(route('admin.restaurants.destroy', restaurantToDelete.id), {
+            onSuccess: () => {
+                toast.success('Restaurant deleted successfully');
+                closeDeleteDialog();
+            },
+            onError: (errors) => {
+                setDeleteError(errors.error || 'Failed to delete restaurant');
+                toast.error(errors.error || 'Failed to delete restaurant');
+            },
+            onFinish: () => setIsDeleting(null),
+            preserveScroll: true,
+        });
+    };
+    const handleFilter = (e: React.FormEvent) => {
+        e.preventDefault();
+        router.get(route('admin.restaurants.index'), { search, city, is_active: status }, { preserveState: true });
+    };
+    const handleToggleActive = (restaurant: Restaurant) => {
+        router.post(route('admin.restaurants.toggleStatus', restaurant.id), {}, {
+            onSuccess: () => toast.success('Status updated'),
+            onError: () => toast.error('Failed to update status'),
+            preserveScroll: true,
+        });
+    };
+    return (
+        <AdminLayout title="Restaurants">
+            <Head title="Restaurants" />
+            <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold tracking-tight">Restaurants</h2>
+                    <Button asChild>
+                        <Link href={route('admin.restaurants.create')}><Plus className="h-4 w-4 mr-2" />Add Restaurant</Link>
+                    </Button>
                 </div>
-
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="is_active"
-                      checked={localFilters.is_active === true}
-                      onCheckedChange={(checked) => handleFilterChange('is_active', checked === true)}
-                    />
-                    <Label htmlFor="is_active">Active Only</Label>
-                  </div>
+                <form onSubmit={handleFilter} className="flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow">
+                    <div>
+                        <label className="block text-xs font-medium mb-1">Search</label>
+                        <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Name, email, phone..." />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium mb-1">City</label>
+                        <select className="border rounded px-2 py-1" value={city} onChange={e => setCity(e.target.value)}>
+                            <option value="">All</option>
+                            {cities.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium mb-1">Status</label>
+                        <select className="border rounded px-2 py-1" value={status} onChange={e => setStatus(e.target.value)}>
+                            <option value="">All</option>
+                            <option value="1">Active</option>
+                            <option value="0">Inactive</option>
+                        </select>
+                    </div>
+                    <Button type="submit">Filter</Button>
+                </form>
+                <div className="bg-white rounded-lg shadow overflow-x-auto">
+                    {restaurantList.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500">No restaurants found</div>
+                    ) : (
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b">
+                                    <th className="p-4 text-left">Name</th>
+                                    <th className="p-4 text-left">Email</th>
+                                    <th className="p-4 text-left">Phone</th>
+                                    <th className="p-4 text-left">City</th>
+                                    <th className="p-4 text-left">Status</th>
+                                    <th className="p-4 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {restaurantList.map((r: Restaurant) => (
+                                    <tr key={r.id} className="border-b hover:bg-gray-50">
+                                        <td className="p-4">{r.restaurant_name}</td>
+                                        <td className="p-4">{r.email}</td>
+                                        <td className="p-4">{r.phone}</td>
+                                        <td className="p-4">{r.address?.city || '-'}</td>
+                                        <td className="p-4">
+                                            <Badge color={r.is_active ? 'green' : 'red'}>
+                                                {r.is_active ? <><CheckCircle className="inline h-4 w-4 mr-1" />Active</> : <><XCircle className="inline h-4 w-4 mr-1" />Inactive</>}
+                                            </Badge>
+                                        </td>
+                                        <td className="p-4">
+                                            <Dropdown.Root>
+                                                <Dropdown.Trigger asChild>
+                                                    <Button variant="ghost" size="sm"><MoreHorizontal className="h-4 w-4" /></Button>
+                                                </Dropdown.Trigger>
+                                                <Dropdown.Content className="w-40">
+                                                    <Dropdown.Item asChild>
+                                                        <Link href={route('admin.restaurants.show', r.id)} className="flex items-center p-2 hover:bg-gray-100"><Eye className="h-4 w-4 mr-2" />View</Link>
+                                                    </Dropdown.Item>
+                                                    <Dropdown.Item asChild>
+                                                        <Link href={route('admin.restaurants.edit', r.id)} className="flex items-center p-2 hover:bg-gray-100"><Edit className="h-4 w-4 mr-2" />Edit</Link>
+                                                    </Dropdown.Item>
+                                                    <Dropdown.Item asChild>
+                                                        <div className="flex items-center p-2 hover:bg-gray-100 cursor-pointer" onClick={() => openDeleteDialog(r)}><Trash2 className="h-4 w-4 mr-2" />Delete</div>
+                                                    </Dropdown.Item>
+                                                    <Dropdown.Item asChild>
+                                                        <div className="flex items-center p-2 hover:bg-gray-100 cursor-pointer" onClick={() => handleToggleActive(r)}>
+                                                            {r.is_active ? <><XCircle className="h-4 w-4 mr-2" />Deactivate</> : <><CheckCircle className="h-4 w-4 mr-2" />Activate</>}
+                                                        </div>
+                                                    </Dropdown.Item>
+                                                </Dropdown.Content>
+                                            </Dropdown.Root>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
-
-                <div className="space-y-2">
-                  <Label>City</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className={cn(
-                          'w-full justify-between',
-                          localFilters.city && 'bg-accent'
-                        )}
-                      >
-                        {localFilters.city || 'All Cities'}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[200px] p-0">
-                      <div className="max-h-[300px] overflow-y-auto">
-                        <div
-                          className="px-4 py-2 text-sm hover:bg-accent cursor-pointer"
-                          onClick={() => handleFilterChange('city', '')}
-                        >
-                          All Cities
-                        </div>
-                        {cities.map(city => (
-                          <div
-                            key={city}
-                            className="px-4 py-2 text-sm hover:bg-accent cursor-pointer"
-                            onClick={() => handleFilterChange('city', city)}
-                          >
-                            {city}
-                          </div>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setLocalFilters({
-                      sort: filters.sort,
-                      direction: filters.direction,
-                    });
-                    router.get(route('admin.restaurants.index'), {
-                      sort: filters.sort,
-                      direction: filters.direction,
-                    });
-                  }}
-                >
-                  Reset
-                </Button>
-                <Button type="submit">
-                  Apply Filters
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Restaurants Table */}
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]">
-                    <Checkbox
-                      checked={selectedRestaurants.length === restaurants.data.length}
-                      onCheckedChange={handleSelectAll}
-                    />
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('restaurant_name')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Name
-                      {getSortIcon('restaurant_name')}
-                    </div>
-                  </TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('email')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Email
-                      {getSortIcon('email')}
-                    </div>
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('phone')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Phone
-                      {getSortIcon('phone')}
-                    </div>
-                  </TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('created_at')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Created At
-                      {getSortIcon('created_at')}
-                    </div>
-                  </TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {restaurants.data.map((restaurant) => (
-                  <TableRow key={restaurant.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedRestaurants.includes(restaurant.id)}
-                        onCheckedChange={() => handleSelectRestaurant(restaurant.id)}
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">{restaurant.restaurant_name}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span>{restaurant.address?.city}, {restaurant.address?.region}</span>
-                        <span className="text-sm text-gray-500">{restaurant.address?.country?.country_name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{restaurant.email}</TableCell>
-                    <TableCell>{restaurant.phone}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={restaurant.is_active ? 'default' : 'secondary'} 
-                        className="cursor-pointer"
-                        onClick={() => toggleStatus(restaurant.id, restaurant.is_active)}
-                      >
-                        {restaurant.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(restaurant.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={route('admin.restaurants.show', restaurant.id)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={route('admin.restaurants.edit', restaurant.id)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </Link>
-                          </DropdownMenuItem>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Restaurant</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete this restaurant? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => {
-                                    router.delete(route('admin.restaurants.destroy', restaurant.id), {
-                                      onError: () => {
-                                        setError('Failed to delete restaurant. Please try again.');
-                                      },
-                                    });
-                                  }}
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* Pagination */}
-        {restaurants.links.length > 3 && (
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              Showing {restaurants.data.length} of {restaurants.total} restaurants
+                {/* Delete Confirmation Dialog */}
+                <AlertDialog open={dialogOpen !== null} onOpenChange={open => !open && closeDeleteDialog()}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to delete {restaurantToDelete?.restaurant_name}? This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={closeDeleteDialog}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDelete} disabled={isDeleting === restaurantToDelete?.id}>
+                                {isDeleting === restaurantToDelete?.id ? 'Deleting...' : 'Delete'}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                        {deleteError && <div className="text-red-500 text-xs mt-2">{deleteError}</div>}
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
-            <div className="flex items-center gap-2">
-              {restaurants.links.map((link, i) => (
-                <Button
-                  key={i}
-                  variant={link.active ? "default" : "outline"}
-                  size="sm"
-                  disabled={!link.url}
-                  onClick={() => {
-                    if (link.url) {
-                      router.get(link.url, {}, {
-                        preserveState: true,
-                        preserveScroll: true,
-                      });
-                    }
-                  }}
-                >
-                  {link.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-    </AdminLayout>
-  );
-}
+        </AdminLayout>
+    );
+} 

@@ -12,11 +12,12 @@ interface User {
     first_name: string;
     last_name: string;
     email: string;
-    phone?: string;
-    role: string;
-    email_verified_at: string | null;
-    is_active: boolean;
+    phone: string;
+    role: "admin" | "customer" | "driver";
+    is_available: boolean;
     created_at: string;
+    updated_at: string;
+    email_verified_at: string | null;
 }
 
 interface Address {
@@ -35,7 +36,7 @@ interface Order {
     total_amount: number;
     created_at: string;
     restaurant_name: string;
-    status_value: string;
+    status: string;
 }
 
 interface UserStats {
@@ -131,8 +132,10 @@ export default function ShowUser({
                                         <Badge color={user.email_verified_at ? 'green' : 'yellow'}>
                                             {user.email_verified_at ? 'Verified' : 'Pending Verification'}
                                         </Badge>
-                                        <Badge color={user.is_active ? 'green' : 'red'}>
-                                            {user.is_active ? 'Active' : 'Inactive'}
+                                        <Badge color={user.is_available ? "green" : "red"}>
+                                            {user.is_available
+                                                ? "Available"
+                                                : "Unavailable"}
                                         </Badge>
                                     </div>
                                 </div>
@@ -252,13 +255,13 @@ export default function ShowUser({
                                                     </TableCell>
                                                     <TableCell>
                                                         <Badge color={
-                                                            order.status_value.toLowerCase() === 'completed' 
+                                                            order.status.toLowerCase() === 'completed' 
                                                             ? 'green' 
-                                                            : order.status_value.toLowerCase() === 'cancelled' 
+                                                            : order.status.toLowerCase() === 'cancelled' 
                                                             ? 'red' 
                                                             : 'blue'
                                                         }>
-                                                            {order.status_value}
+                                                            {order.status}
                                                         </Badge>
                                                     </TableCell>
                                                 </TableRow>

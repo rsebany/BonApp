@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Services\RestaurantService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
 
 class RestaurantController extends Controller
 {
@@ -21,13 +22,14 @@ class RestaurantController extends Controller
         protected RestaurantService $restaurantService
     ) {}
     
-    public function index()
+    public function index(Request $request)
     {
-        $restaurants = $this->restaurantService->getAllRestaurants(auth()->user());
+        $searchTerm = $request->input('search');
+        $restaurants = $this->restaurantService->getAllRestaurants(auth()->user(), $searchTerm);
         
-        return Inertia::render('Restaurants/Index', [
+        return Inertia::render('User/Restaurants/index', [
             'restaurants' => $restaurants,
-            'canCreate' => auth()->user()->can('create', Restaurant::class)
+            'searchTerm' => $searchTerm,
         ]);
     }
 

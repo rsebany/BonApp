@@ -18,6 +18,7 @@ class AddressService
     public function createAddress(User $user, array $data): CustomerAddress
     {
         $address = Address::create([
+            'user_id' => $user->id,
             'unit_number' => $data['unit_number'] ?? null,
             'street_number' => $data['street_number'],
             'address_line1' => $data['address_line1'],

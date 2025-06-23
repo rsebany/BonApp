@@ -37,8 +37,8 @@ class UserController extends Controller
             $query->where('role', $request->role);
         }
 
-        if ($request->filled('email_verified')) {
-            $query->whereNotNull('email_verified_at');
+        if ($request->filled('is_available')) {
+            $query->where('is_available', $request->boolean('is_available'));
         }
 
         if ($request->filled('date_from')) {
@@ -58,8 +58,14 @@ class UserController extends Controller
             $query->orderBy($sortField, $sortDirection);
         }
 
-        // Get all users without pagination since your component doesn't handle it
-        $users = $query->get();
+        // Handle pagination with dynamic page size
+        $perPage = $request->get('per_page', 15);
+        $allowedPerPage = [10, 25, 50, 100];
+        if (!in_array($perPage, $allowedPerPage)) {
+            $perPage = 15; // Default fallback
+        }
+
+        $users = $query->paginate($perPage)->withQueryString();
 
         $stats = [
             'total_users' => User::count(),
@@ -72,19 +78,21 @@ class UserController extends Controller
         ];
 
         return Inertia::render('admin/Users/index', [ 
-            'users' => $users->map(fn($user) => [
-                'id' => $user->id,
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'email_verified_at' => $user->email_verified_at,
-                'created_at' => $user->created_at,
-            ]),
+            'users' => $users->through(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'email_verified_at' => $user->email_verified_at,
+                    'created_at' => $user->created_at,
+                ];
+            }),
             'stats' => $stats,
             'filters' => $request->only([
-                'search', 'role', 'email_verified', 
-                'date_from', 'date_to', 'sort', 'direction'
+                'search', 'role', 'is_available', 
+                'date_from', 'date_to', 'sort', 'direction', 'per_page'
             ]),
         ]);
     }
@@ -98,6 +106,10 @@ class UserController extends Controller
 
         $user = User::findOrFail($id);
 
+        // Get delivered status ID
+        $deliveredStatus = \App\Models\OrderStatus::where('name', 'Delivered')->first();
+        $deliveredStatusId = $deliveredStatus ? $deliveredStatus->id : 6; // Fallback to 6 based on seeder
+
         // Get user statistics if customer
         $userStats = [];
         if ($user->role === 'customer') {
@@ -105,15 +117,15 @@ class UserController extends Controller
                 'total_orders' => DB::table('food_orders')->where('customer_id', $id)->count(),
                 'completed_orders' => DB::table('food_orders')
                     ->where('customer_id', $id)
-                    ->where('order_status_id', 4)
+                    ->where('order_status_id', $deliveredStatusId)
                     ->count(),
                 'total_spent' => DB::table('food_orders')
                     ->where('customer_id', $id)
-                    ->where('order_status_id', 4)
+                    ->where('order_status_id', $deliveredStatusId)
                     ->sum('total_amount'),
                 'average_order_value' => DB::table('food_orders')
                     ->where('customer_id', $id)
-                    ->where('order_status_id', 4)
+                    ->where('order_status_id', $deliveredStatusId)
                     ->avg('total_amount'),
                 'favorite_restaurants' => DB::table('food_orders')
                     ->join('restaurants', 'food_orders.restaurant_id', '=', 'restaurants.id')
@@ -134,7 +146,7 @@ class UserController extends Controller
                     'food_orders.total_amount',
                     'food_orders.created_at',
                     'restaurants.restaurant_name',
-                    'order_statuses.status_value'
+                    'order_statuses.name as status'
                 )
                 ->where('food_orders.customer_id', $id)
                 ->orderBy('food_orders.created_at', 'desc')
@@ -189,19 +201,23 @@ class UserController extends Controller
 
         $id = $user->id;
 
+        // Get delivered status ID
+        $deliveredStatus = \App\Models\OrderStatus::where('name', 'Delivered')->first();
+        $deliveredStatusId = $deliveredStatus ? $deliveredStatus->id : 6; // Fallback to 6 based on seeder
+
         $stats = [
             'total_orders' => DB::table('food_orders')->where('customer_id', $id)->count(),
             'completed_orders' => DB::table('food_orders')
                 ->where('customer_id', $id)
-                ->where('order_status_id', 4)
+                ->where('order_status_id', $deliveredStatusId)
                 ->count(),
             'total_spent' => DB::table('food_orders')
                 ->where('customer_id', $id)
-                ->where('order_status_id', 4)
+                ->where('order_status_id', $deliveredStatusId)
                 ->sum('total_amount'),
             'average_order_value' => DB::table('food_orders')
                 ->where('customer_id', $id)
-                ->where('order_status_id', 4)
+                ->where('order_status_id', $deliveredStatusId)
                 ->avg('total_amount'),
             'favorite_restaurants' => DB::table('food_orders')
                 ->join('restaurants', 'food_orders.restaurant_id', '=', 'restaurants.id')
@@ -222,7 +238,7 @@ class UserController extends Controller
                 'food_orders.total_amount',
                 'food_orders.created_at',
                 'restaurants.restaurant_name',
-                'order_statuses.status_value'
+                'order_statuses.name as status'
             )
             ->where('food_orders.customer_id', $id)
             ->orderBy('food_orders.created_at', 'desc')
@@ -266,7 +282,7 @@ class UserController extends Controller
             ],
             'phone' => 'nullable|string|max:20',
             'role' => 'required|in:customer,admin',
-            'is_active' => 'boolean',
+            'is_available' => 'boolean',
             'password' => 'nullable|min:8|confirmed',
         ]);
 
@@ -335,11 +351,11 @@ class UserController extends Controller
             return response()->json(['error' => 'You cannot deactivate your own account.'], 422);
         }
 
-        $user->update(['is_active' => !$user->is_active]);
+        $user->update(['is_available' => !$user->is_available]);
 
         return response()->json([
             'success' => true,
-            'is_active' => $user->is_active,
+            'is_available' => $user->is_available,
             'message' => 'User status updated successfully'
         ]);
     }
@@ -368,12 +384,12 @@ class UserController extends Controller
         try {
             switch ($action) {
                 case 'activate':
-                    User::whereIn('id', $userIds)->update(['is_active' => true]);
+                    User::whereIn('id', $userIds)->update(['is_available' => true]);
                     $message = 'Users activated successfully';
                     break;
 
                 case 'deactivate':
-                    User::whereIn('id', $userIds)->update(['is_active' => false]);
+                    User::whereIn('id', $userIds)->update(['is_available' => false]);
                     $message = 'Users deactivated successfully';
                     break;
 
@@ -413,37 +429,82 @@ class UserController extends Controller
 
     public function export(Request $request)
     {
-        // Ensure user is admin
+        $type = $request->get('type', 'list');
+
+        if ($type === 'statistics') {
+            return $this->exportStatistics($request);
+        }
+
+        return $this->exportList($request);
+    }
+
+    protected function exportStatistics(Request $request)
+    {
+        $stats = $this->getStatisticsData();
+        $filename = 'user_statistics_export_' . date('Y-m-d_H-i-s') . '.csv';
+        $headers = ['Content-Type' => 'text/csv', 'Content-Disposition' => 'attachment; filename="' . $filename . '"'];
+
+        $callback = function () use ($stats) {
+            $file = fopen('php://output', 'w');
+
+            // Summary Stats
+            fputcsv($file, ['Metric', 'Value']);
+            fputcsv($file, ['Total Users', $stats['total_users']]);
+            fputcsv($file, ['Total Customers', $stats['total_customers']]);
+            fputcsv($file, ['Total Admins', $stats['total_admins']]);
+            fputcsv($file, ['Total Drivers', $stats['total_drivers']]);
+            fputcsv($file, ['Verified Users', $stats['verified_users']]);
+            fputcsv($file, []);
+
+            // Registrations this month
+            fputcsv($file, ['Registrations this Month']);
+            fputcsv($file, ['Date', 'User Count']);
+            foreach ($stats['registrations_by_day'] as $reg) {
+                fputcsv($file, [$reg->date, $reg->count]);
+            }
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    protected function exportList(Request $request)
+    {
         if (auth()->user()->role !== 'admin') {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return redirect('/dashboard');
         }
 
         $query = User::query();
 
-        // Apply same filters as index
+        // Apply filters
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('first_name', 'like', "%{$request->search}%")
+                    ->orWhere('last_name', 'like', "%{$request->search}%")
+                    ->orWhere('email', 'like', "%{$request->search}%");
+            });
+        }
         if ($request->filled('role')) {
             $query->where('role', $request->role);
         }
-
-        if ($request->filled('is_active')) {
-            $query->where('is_active', $request->boolean('is_active'));
+        if ($request->filled('is_available')) {
+            $query->where('is_available', $request->boolean('is_available'));
         }
-
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
-
         if ($request->filled('date_to')) {
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
         $users = $query->select([
             'id', 'first_name', 'last_name', 'email', 'phone', 
-            'role', 'is_active', 'email_verified_at', 'created_at'
+            'role', 'is_available', 'email_verified_at', 'created_at'
         ])->get();
 
         $csvData = [];
-        $csvData[] = ['ID', 'First Name', 'Last Name', 'Email', 'Phone', 'Role', 'Active', 'Email Verified', 'Created At'];
+        $csvData[] = ['ID', 'First Name', 'Last Name', 'Email', 'Phone', 'Role', 'Status', 'Email Verified', 'Created At'];
 
         foreach ($users as $user) {
             $csvData[] = [
@@ -453,7 +514,7 @@ class UserController extends Controller
                 $user->email,
                 $user->phone,
                 $user->role,
-                $user->is_active ? 'Yes' : 'No',
+                $user->is_available ? 'Available' : 'Unavailable',
                 $user->email_verified_at ? 'Yes' : 'No',
                 $user->created_at->format('Y-m-d H:i:s'),
             ];
@@ -489,22 +550,121 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        // Ensure user is admin
+        if (auth()->user()->role !== 'admin') {
+            return redirect('/dashboard');
+        }
+
+        $validatedData = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => 'required|string|in:admin,manager,customer,driver',
+            'email' => 'required|email|max:255|unique:users',
+            'phone' => 'nullable|string|max:20',
+            'role' => 'required|in:customer,admin',
+            'is_available' => 'boolean',
+            'password' => 'required|min:8|confirmed',
         ]);
 
-        $user = User::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
-        ]);
+        $validatedData['password'] = Hash::make($validatedData['password']);
+
+        User::create($validatedData);
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User created successfully');
+    }
+
+    /**
+     * Display user statistics
+     */
+    public function statistics()
+    {
+        // Ensure user is admin
+        if (auth()->user()->role !== 'admin') {
+            return redirect('/dashboard');
+        }
+
+        // Get total users by role
+        $totalUsers = User::count();
+        $totalCustomers = User::where('role', 'customer')->count();
+        $totalDrivers = User::where('role', 'driver')->count();
+        $totalAdmins = User::where('role', 'admin')->count();
+        $activeUsers = User::where('is_available', true)->count();
+        $inactiveUsers = User::where('is_available', false)->count();
+
+        // Get users by month (registration date)
+        $usersByMonth = User::select(
+                DB::raw('MONTH(created_at) as month'),
+                DB::raw('count(*) as count')
+            )
+            ->groupBy('month')
+            ->orderBy('month', 'asc')
+            ->get();
+
+        // Get top customers by orders
+        $topCustomersByOrders = User::select(
+                'users.first_name',
+                'users.last_name',
+                'users.email',
+                DB::raw('count(food_orders.id) as order_count'),
+                DB::raw('sum(food_orders.total_amount) as total_spent')
+            )
+            ->leftJoin('food_orders', 'users.id', '=', 'food_orders.customer_id')
+            ->where('users.role', 'customer')
+            ->groupBy('users.id', 'users.first_name', 'users.last_name', 'users.email')
+            ->orderBy('order_count', 'desc')
+            ->limit(10)
+            ->get();
+
+        // Get top customers by spending
+        $topCustomersBySpending = User::select(
+                'users.first_name',
+                'users.last_name',
+                'users.email',
+                DB::raw('sum(food_orders.total_amount) as total_spent'),
+                DB::raw('count(food_orders.id) as order_count')
+            )
+            ->leftJoin('food_orders', 'users.id', '=', 'food_orders.customer_id')
+            ->where('users.role', 'customer')
+            ->groupBy('users.id', 'users.first_name', 'users.last_name', 'users.email')
+            ->orderBy('total_spent', 'desc')
+            ->limit(10)
+            ->get();
+
+        // Get users by verification status
+        $verifiedUsers = User::whereNotNull('email_verified_at')->count();
+        $unverifiedUsers = User::whereNull('email_verified_at')->count();
+
+        // Get recent users
+        $recentUsers = User::select('id', 'first_name', 'last_name', 'email', 'role', 'created_at')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        // Get average orders per customer
+        $averageOrdersPerCustomer = $totalCustomers > 0 ? 
+            DB::table('food_orders')->count() / $totalCustomers : 0;
+
+        // Get average spending per customer
+        $averageSpendingPerCustomer = $totalCustomers > 0 ? 
+            DB::table('food_orders')->sum('total_amount') / $totalCustomers : 0;
+
+        return Inertia::render('admin/Users/statistics', [
+            'statistics' => [
+                'total_users' => $totalUsers,
+                'total_customers' => $totalCustomers,
+                'total_drivers' => $totalDrivers,
+                'total_admins' => $totalAdmins,
+                'active_users' => $activeUsers,
+                'inactive_users' => $inactiveUsers,
+                'users_by_month' => $usersByMonth,
+                'top_customers_by_orders' => $topCustomersByOrders,
+                'top_customers_by_spending' => $topCustomersBySpending,
+                'verified_users' => $verifiedUsers,
+                'unverified_users' => $unverifiedUsers,
+                'recent_users' => $recentUsers,
+                'average_orders_per_customer' => round($averageOrdersPerCustomer, 2),
+                'average_spending_per_customer' => round($averageSpendingPerCustomer, 2),
+            ],
+        ]);
     }
 }

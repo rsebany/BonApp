@@ -26,4 +26,7 @@ export default defineConfig({
             '@/pages': path.resolve(__dirname, 'resources/js/pages'),
         },
     },
+    define: {
+        'process.env.MIX_GOOGLE_MAPS_API_KEY': JSON.stringify(process.env.MIX_GOOGLE_MAPS_API_KEY || ''),
+    },
 });

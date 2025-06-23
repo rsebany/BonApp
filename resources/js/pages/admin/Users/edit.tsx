@@ -21,7 +21,7 @@ interface User {
   email: string;
   phone?: string;
   role: string;
-  is_active: boolean;
+  is_available: boolean;
 }
 
 export default function EditUser() {
@@ -32,7 +32,7 @@ export default function EditUser() {
     email: user.email || '',
     phone: user.phone || '',
     role: user.role || 'customer',
-    is_active: user.is_active ?? true,
+    is_available: user.is_available ?? true,
     password: '',
     password_confirmation: '',
   });
@@ -135,17 +135,17 @@ export default function EditUser() {
 
               <div className="space-y-2 flex items-center">
                 <Checkbox
-                  id="is_active"
-                  checked={data.is_active}
+                  id="is_available"
+                  checked={data.is_available}
                   onCheckedChange={(checked) => 
-                    setData('is_active', Boolean(checked))
+                    setData('is_available', Boolean(checked))
                   }
                 />
-                <Label htmlFor="is_active" className="ml-2">
-                  Active User
+                <Label htmlFor="is_available" className="ml-2">
+                  User is available
                 </Label>
-                {errors.is_active && (
-                  <p className="text-sm text-red-600">{errors.is_active}</p>
+                {errors.is_available && (
+                  <p className="text-sm text-red-600">{errors.is_available}</p>
                 )}
               </div>
             </div>

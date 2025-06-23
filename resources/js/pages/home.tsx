@@ -1,5 +1,5 @@
-import { type SharedData } from '@/types/index';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { type SharedData, type Restaurant, type BackendRestaurant } from '@/types/index';
+import { Head, Link, usePage, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,13 +9,40 @@ import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
+// Helper to transform backend data to frontend format
+const transformRestaurant = (restaurant: BackendRestaurant): Restaurant => {
+  // Add some mock data for fields not yet available from backend
+  const mockData = {
+    rating: (Math.random() * (5 - 4.5) + 4.5).toFixed(1),
+    priceRange: '$$',
+    image: `/images/${restaurant.cuisine_type?.toLowerCase() || 'default'}.jpg`,
+    tags: [restaurant.cuisine_type, 'Local Favorite', 'Comfort Food'],
+    featuredDish: 'Chef\'s Special',
+    distance: `${(Math.random() * 2).toFixed(1)} miles`
+  };
+
+  return {
+    ...restaurant,
+    rating: parseFloat(mockData.rating),
+    priceRange: mockData.priceRange,
+    image: mockData.image,
+    tags: mockData.tags,
+    featuredDish: mockData.featuredDish,
+    distance: mockData.distance,
+  };
+};
+
 export default function Home() {
-  usePage<SharedData>();
+  const { featuredRestaurants: featuredRestaurantsData, popularCategories, localFavorites: localFavoritesData } = usePage<SharedData>().props;
+  
+  const featuredRestaurants = featuredRestaurantsData.map(transformRestaurant);
+  const localFavorites = localFavoritesData.map(transformRestaurant);
   
   const [isScrolled, setIsScrolled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
   const [savedRestaurants, setSavedRestaurants] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,6 +58,11 @@ export default function Home() {
     };
   }, []);
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.get(route('restaurants.index', { search: searchQuery }));
+  };
+
   const toggleSaved = (id: number) => {
     setSavedRestaurants(prev => 
       prev.includes(id) 
@@ -39,115 +71,16 @@ export default function Home() {
     );
   };
 
-  // Mock data
-  const featuredRestaurants = [
-    {
-      id: 1,
-      name: "Burger Palace",
-      isSuperhost: true,
-      cuisine: "American",
-      rating: 4.8,
-      deliveryTime: "15-25 min",
-      distance: "0.5 miles",
-      image: "/images/burger.jpg",
-      tags: ["Gourmet", "Local Favorite", "Comfort Food"],
-      featuredDish: "Truffle Burger",
-      priceRange: "$$",
-      category: "Burgers"
-    },
-    {
-      id: 2,
-      name: "Pizza Heaven",
-      cuisine: "Italian",
-      rating: 4.9,
-      deliveryTime: "20-30 min",
-      distance: "1.2 miles",
-      isSuperhost: true,
-      image: "/images/pizza.jpg",
-      tags: ["Wood Fired", "Authentic", "Family Style"],
-      featuredDish: "Truffle Mushroom Pizza",
-      priceRange: "$$",
-      category: "Pizza"
-    },
-    {
-      id: 3,
-      name: "Sushi World",
-      cuisine: "Japanese",
-      rating: 4.7,
-      deliveryTime: "25-35 min",
-      distance: "0.8 miles",
-      isSuperhost: false,
-      image: "/images/sushi.jpg",
-      tags: ["Omakase", "Fresh", "Healthy"],
-      featuredDish: "Chef's Special Roll",
-      priceRange: "$$$",
-      category: "Sushi"
-    },
-    {
-      id: 4,
-      name: "Green Leaf",
-      cuisine: "Healthy",
-      rating: 4.6,
-      deliveryTime: "20-30 min",
-      distance: "1.5 miles",
-      isSuperhost: true,
-      image: "/images/salad.jpg",
-      tags: ["Organic", "Farm-to-Table", "Vegan"],
-      featuredDish: "Kale Caesar Salad",
-      priceRange: "$$",
-      category: "Salads"
-    },
-  ];
-
-  const popularCategories = [
-    { id: 1, name: "Burgers", icon: "🍔", count: 24, image: "/images/burger-cat.jpg" },
-    { id: 2, name: "Pizza", icon: "🍕", count: 18, image: "/images/pizza-cat.jpg" },
-    { id: 3, name: "Sushi", icon: "🍣", count: 12, image: "/images/sushi-cat.jpg" },
-    { id: 4, name: "Salads", icon: "🥗", count: 15, image: "/images/salad-cat.jpg" },
-    { id: 5, name: "Desserts", icon: "🍰", count: 8, image: "/images/dessert-cat.jpg" },
-  ];
-
-  const localFavorites = [
-    {
-      id: 5,
-      name: "Taco Fiesta",
-      cuisine: "Mexican",
-      rating: 4.7,
-      deliveryTime: "15-25 min",
-      distance: "0.3 miles",
-      isLocalFavorite: true,
-      image: "/images/tacos.jpg",
-      tags: ["Street Food", "Authentic", "Spicy"],
-      featuredDish: "Al Pastor Tacos",
-      priceRange: "$",
-      category: "Mexican"
-    },
-    {
-      id: 6,
-      name: "Pasta Palace",
-      cuisine: "Italian",
-      rating: 4.6,
-      deliveryTime: "25-35 min",
-      distance: "1.1 miles",
-      isLocalFavorite: true,
-      image: "/images/pasta.jpg",
-      tags: ["Homemade", "Comfort Food", "Family Style"],
-      featuredDish: "Truffle Pasta",
-      priceRange: "$$",
-      category: "Italian"
-    }
-  ];
-
   const allRestaurants = [...featuredRestaurants, ...localFavorites];
   const filteredRestaurants = activeCategory === 'All' 
     ? allRestaurants 
-    : allRestaurants.filter(restaurant => restaurant.category === activeCategory);
+    : allRestaurants.filter(restaurant => restaurant.cuisine_type === activeCategory);
 
-  const categories = ['All', ...Array.from(new Set(allRestaurants.map(r => r.category)))];
+  const categories = ['All', ...Array.from(new Set(allRestaurants.map(r => r.cuisine_type)))];
 
   return (
     <div className="min-h-screen bg-[#EBEBEB]">
-      <Head title="Discover Local Restaurants | TasteVoyage" />
+      <Head title="Discover Local Restaurants | BonApp" />
       
       {/* Sticky Header */}
       <header className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-sm py-2' : 'bg-transparent py-4'}`}>
@@ -198,21 +131,25 @@ export default function Home() {
           
           {/* Search Bar */}
           <div className="max-w-3xl mx-auto">
-            <div className="relative shadow-lg rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl">
-              <div className="flex">
-                <div className="relative flex-grow">
-                  <Input 
-                    type="text" 
-                    placeholder="Search by restaurant, cuisine, or dish..." 
-                    className="pl-12 pr-4 py-6 rounded-none border-none text-[#222222] focus-visible:ring-0 text-lg"
-                  />
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#717171]" />
+            <form onSubmit={handleSearchSubmit}>
+              <div className="relative shadow-lg rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl">
+                <div className="flex">
+                  <div className="relative flex-grow">
+                    <Input 
+                      type="text" 
+                      placeholder="Search by restaurant, cuisine, or dish..." 
+                      className="pl-12 pr-4 py-6 rounded-none border-none text-[#222222] focus-visible:ring-0 text-lg"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#717171]" />
+                  </div>
+                  <Button type="submit" className="rounded-none bg-gradient-to-r from-[#00A699] to-[#008489] hover:from-[#008489] hover:to-[#00A699] px-8 py-6 text-white font-medium">
+                    Search
+                  </Button>
                 </div>
-                <Button className="rounded-none bg-gradient-to-r from-[#00A699] to-[#008489] hover:from-[#008489] hover:to-[#00A699] px-8 py-6 text-white font-medium">
-                  <MapPin className="mr-2 h-5 w-5" /> Show map
-                </Button>
               </div>
-            </div>
+            </form>
             
             <div className="flex flex-wrap justify-center gap-2 mt-4">
               <span className="text-sm text-[#717171]">Trending now: </span>
@@ -287,7 +224,7 @@ export default function Home() {
                           className={`w-5 h-5 ${savedRestaurants.includes(restaurant.id) ? 'fill-[#00A699] text-[#00A699]' : 'text-[#717171]'}`} 
                         />
                       </Button>
-                      {restaurant.name && (
+                      {restaurant.restaurant_name && (
                         <div className="absolute bottom-2 left-2">
                           <Badge className="flex items-center bg-white text-[#222222] hover:bg-white shadow-sm">
                             <Award className="w-4 h-4 mr-1 text-[#FFB400]" />
@@ -299,7 +236,7 @@ export default function Home() {
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-start">
                         <CardTitle className="group-hover:text-[#00A699] transition-colors text-lg">
-                          {restaurant.name}
+                          {restaurant.restaurant_name}
                         </CardTitle>
                         <div className="flex items-center bg-[#EBEBEB] px-2 py-1 rounded-md">
                           <Star className="w-4 h-4 fill-[#FFB400] text-[#FFB400] mr-1" />
@@ -307,7 +244,7 @@ export default function Home() {
                         </div>
                       </div>
                       <CardDescription className="flex justify-between text-[#717171]">
-                        <span>{restaurant.cuisine}</span>
+                        <span>{restaurant.cuisine_type}</span>
                         <span>•</span>
                         <span>{restaurant.distance}</span>
                         <span>•</span>
@@ -331,7 +268,7 @@ export default function Home() {
                     <CardFooter className="mt-auto pt-0 flex items-center justify-between border-t px-6 py-4">
                       <div className="flex items-center text-[#717171]">
                         <Clock className="w-4 h-4 mr-1" />
-                        <span className="text-sm">{restaurant.deliveryTime}</span>
+                        <span className="text-sm">{restaurant.delivery_time}</span>
                       </div>
                       <Button 
                         variant="outline" 
@@ -359,8 +296,8 @@ export default function Home() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             {popularCategories.map((category) => (
               <Link 
-                key={category.id} 
-                href={`/category/${category.id}`}
+                key={category.name} 
+                href={`/category/${category.name}`}
                 className="group relative overflow-hidden rounded-xl"
               >
                 <div className="aspect-square overflow-hidden rounded-xl">
@@ -406,7 +343,7 @@ export default function Home() {
                     <div className="sm:w-2/3 p-6">
                       <div className="flex justify-between items-start mb-2">
                         <CardTitle className="text-xl group-hover:text-[#00A699] transition-colors">
-                          {restaurant.name}
+                          {restaurant.restaurant_name}
                         </CardTitle>
                         <div className="flex items-center bg-[#EBEBEB] px-2 py-1 rounded-md">
                           <Star className="w-4 h-4 fill-[#FFB400] text-[#FFB400] mr-1" />
@@ -414,7 +351,7 @@ export default function Home() {
                         </div>
                       </div>
                       <CardDescription className="mb-4 text-[#717171]">
-                        {restaurant.cuisine} • {restaurant.distance} • {restaurant.priceRange}
+                        {restaurant.cuisine_type} • {restaurant.distance} • {restaurant.priceRange}
                       </CardDescription>
                       <p className="text-[#222222] mb-4">{restaurant.featuredDish}</p>
                       <div className="flex flex-wrap gap-2 mb-4">
@@ -431,7 +368,7 @@ export default function Home() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center text-[#717171]">
                           <Clock className="w-4 h-4 mr-1" />
-                          <span className="text-sm">{restaurant.deliveryTime}</span>
+                          <span className="text-sm">{restaurant.delivery_time}</span>
                         </div>
                         <Button size="sm" className="bg-[#00A699] hover:bg-[#008489]">
                           View menu <ArrowRight className="w-4 h-4 ml-2" />
@@ -449,7 +386,7 @@ export default function Home() {
         
         {/* How It Works */}
         <section className="mb-16">
-          <h2 className="text-2xl font-bold mb-8 text-center text-[#222222]">How TasteVoyage works</h2>
+          <h2 className="text-2xl font-bold mb-8 text-center text-[#222222]">How BonApp works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center p-6 hover:bg-[#00A699]/5 rounded-xl transition-colors">
               <div className="bg-[#00A699]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -494,7 +431,7 @@ export default function Home() {
             </div>
             <h2 className="text-2xl font-bold mb-4 text-[#222222]">Dine with confidence</h2>
             <p className="text-[#717171] mb-6 max-w-2xl mx-auto">
-              Every restaurant on TasteVoyage meets our high standards for food quality, 
+              Every restaurant on BonApp meets our high standards for food quality, 
               safety, and service. Our review system helps you choose the best options.
             </p>
             <Button variant="outline" className="border-[#00A699]/30 text-[#00A699] hover:bg-[#00A699]/10 bg-white">
@@ -526,7 +463,7 @@ export default function Home() {
       <footer className="bg-white border-t py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-lg font-semibold mb-4">TasteVoyage</h3>
+            <h3 className="text-lg font-semibold mb-4">BonApp</h3>
             <p className="text-[#717171]">
               Connecting food lovers with the best local restaurants and culinary experiences.
             </p>
@@ -557,7 +494,7 @@ export default function Home() {
           </div>
         </div>
         <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-[#EBEBEB] text-center text-[#717171] text-sm">
-          © {new Date().getFullYear()} TasteVoyage, Inc. All rights reserved.
+          © {new Date().getFullYear()} BonApp, Inc. All rights reserved.
         </div>
       </footer>
     </div>

@@ -12,7 +12,10 @@ import {
     Settings,
     LogOut,
     PanelLeftClose,
-    PanelLeftOpen
+    PanelLeftOpen,
+    TrendingUp,
+    List,
+    Bell
 } from 'lucide-react';
 import AppLogo from '../SideBar/app-logo';
 
@@ -26,28 +29,81 @@ const adminMainNavItems: NavItem[] = [
         title: 'Orders',
         href: route('admin.orders.index'),
         icon: ShoppingBag,
+        children: [
+            {
+                title: 'All Orders',
+                href: route('admin.orders.index'),
+                icon: List,
+            },
+            {
+                title: 'Statistics',
+                href: route('admin.orders.statistics'),
+                icon: TrendingUp,
+            },
+        ],
     },
     {
         title: 'Restaurants',
         href: route('admin.restaurants.index'),
         icon: Store,
+        children: [
+            {
+                title: 'All Restaurants',
+                href: route('admin.restaurants.index'),
+                icon: List,
+            },
+            {
+                title: 'Statistics',
+                href: route('admin.restaurants.statistics'),
+                icon: TrendingUp,
+            },
+        ],
     },
     {
         title: 'Users',
         href: route('admin.users.index'),
         icon: Users,
+        children: [
+            {
+                title: 'All Users',
+                href: route('admin.users.index'),
+                icon: List,
+            },
+            {
+                title: 'Statistics',
+                href: route('admin.users.statistics'),
+                icon: TrendingUp,
+            },
+        ],
     },
     {
         title: 'Reports',
         href: route('admin.reports.index'),
         icon: BarChart3,
+        children: [
+            {
+                title: 'Analytics',
+                href: route('admin.reports.index'),
+                icon: TrendingUp,
+            },
+            {
+                title: 'Sales',
+                href: route('admin.reports.sales'),
+                icon: TrendingUp,
+            },
+        ],
+    },
+    {
+        title: 'Notifications',
+        href: route('admin.notifications.all'),
+        icon: Bell,
     },
 ];
 
 const adminFooterNavItems: NavItem[] = [
     {
         title: 'Settings',
-        href: route('admin.profile.edit'),
+        href: route('admin.settings'),
         icon: Settings,
     },
     {

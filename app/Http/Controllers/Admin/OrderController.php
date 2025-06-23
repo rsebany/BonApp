@@ -16,16 +16,25 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Log;
+use App\Services\GeocodingService;
 
 class OrderController extends Controller
 {
     use AuthorizesRequests;
+
+    protected $geocodingService;
+
+    public function __construct(GeocodingService $geocodingService)
+    {
+        $this->geocodingService = $geocodingService;
+    }
+
     public function index(Request $request)
     {
         $query = FoodOrder::with([
             'customer:id,first_name,last_name,email',
             'restaurant:id,restaurant_name',
-            'orderStatus:id,name',  // Changed from 'status' to 'name'
+            'orderStatus:id,name',
             'assignedDriver:id,first_name,last_name'
         ])
         ->latest();
@@ -66,7 +75,14 @@ class OrderController extends Controller
             $query->orderBy($request->sort, $request->direction);
         }
 
-        $orders = $query->paginate(15)
+        // Handle pagination with dynamic page size
+        $perPage = $request->get('per_page', 15);
+        $allowedPerPage = [10, 25, 50, 100];
+        if (!in_array($perPage, $allowedPerPage)) {
+            $perPage = 15; // Default fallback
+        }
+
+        $orders = $query->paginate($perPage)
             ->withQueryString()
             ->through(function ($order) {
                 return [
@@ -101,7 +117,7 @@ class OrderController extends Controller
             'orders' => $orders,
             'orderStatuses' => OrderStatus::select('id', 'name as status')->get(),  // Using alias here
             'restaurants' => Restaurant::select('id', 'restaurant_name')->get(),
-            'filters' => $request->only(['search', 'status', 'restaurant', 'date_from', 'date_to', 'sort', 'direction']),
+            'filters' => $request->only(['search', 'status', 'restaurant', 'date_from', 'date_to', 'sort', 'direction', 'per_page']),
             'user' => [
                 'role' => auth()->user()->role,
             ],
@@ -117,11 +133,11 @@ class OrderController extends Controller
         $order = FoodOrder::with([
             'customer:id,first_name,last_name,email,phone',
             'restaurant:id,restaurant_name',
-            'restaurant.address:id,address_line1,address_line2,city,region,postal_code',
+            'restaurant.address:id,address_line1,address_line2,city,region,postal_code,country_id',
             'restaurant.address.country:id,country_name',
-            'orderStatus:id,name as status', 
+            'orderStatus:id,name',
             'assignedDriver:id,first_name,last_name,phone',
-            'customerAddress:id,address_line1,address_line2,city,region,postal_code',
+            'customerAddress:id,address_line1,address_line2,city,region,postal_code,country_id',
             'customerAddress.country:id,country_name',
             'orderItems.menuItem:id,item_name,price'
         ])->findOrFail($id);
@@ -217,61 +233,65 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
-        // Validate the request
-        $validated = $request->validate([
-            'customer_id' => 'required|exists:users,id',
-            'restaurant_id' => 'required|exists:restaurants,id',
-            'customer_address_id' => 'required|exists:addresses,id',
-            'order_status_id' => 'required|exists:order_statuses,id',
-            'assigned_driver_id' => 'nullable|exists:users,id',
-            'order_date_time' => 'required|date',
-            'requested_delivery_date_time' => 'required|date|after:order_date_time',
-            'delivery_fee' => 'required|numeric|min:0',
-            'total_amount' => 'required|numeric|min:0',
-            'items' => 'required|array|min:1',
-            'items.*.menu_item_id' => 'required|exists:menu_items,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.price' => 'required|numeric|min:0',
-            'items.*.subtotal' => 'required|numeric|min:0',
+    $validated = $request->validate([
+        'customer_id' => 'required|exists:users,id',
+        'restaurant_id' => 'required|exists:restaurants,id',
+        'order_status_id' => 'required|exists:order_statuses,id',
+        'assigned_driver_id' => 'nullable|exists:users,id',
+        'delivery_fee' => 'required|numeric|min:0',
+        'total_amount' => 'required|numeric|min:0',
+        'items' => 'required|array|min:1',
+        'items.*.menu_item_id' => 'required|exists:menu_items,id',
+        'items.*.quantity' => 'required|integer|min:1',
+        'items.*.price' => 'required|numeric|min:0',
+        'items.*.subtotal' => 'required|numeric|min:0',
+        // Address fields (either customer_address_id or manual address)
+        'customer_address_id' => 'required_without_all:address_line1,street_number,city,region,postal_code|exists:customer_addresses,id',
+        'address_line1' => 'required_without:customer_address_id',
+        'street_number' => 'required_without:customer_address_id',
+        'city' => 'required_without:customer_address_id',
+        'region' => 'required_without:customer_address_id',
+        'postal_code' => 'required_without:customer_address_id',
+    ]);
+
+    try {
+        DB::beginTransaction();
+        
+        $order = FoodOrder::create([
+            'customer_id' => $validated['customer_id'],
+            'restaurant_id' => $validated['restaurant_id'],
+            'customer_address_id' => $validated['customer_address_id'],
+            'order_status_id' => $validated['order_status_id'],
+            'assigned_driver_id' => $validated['assigned_driver_id'],
+            'delivery_fee' => $validated['delivery_fee'],
+            'total_amount' => $validated['total_amount'],
+            'order_date_time' => now(),
+            'requested_delivery_date_time' => now()->addHour(),
         ]);
 
-        try {
-            DB::beginTransaction();
-
-            // Create the order
-            $order = FoodOrder::create([
-                'customer_id' => $validated['customer_id'],
-                'restaurant_id' => $validated['restaurant_id'],
-                'customer_address_id' => $validated['customer_address_id'],
-                'order_status_id' => $validated['order_status_id'],
-                'assigned_driver_id' => $validated['assigned_driver_id'],
-                'order_date_time' => $validated['order_date_time'],
-                'requested_delivery_date_time' => $validated['requested_delivery_date_time'],
-                'delivery_fee' => $validated['delivery_fee'],
-                'total_amount' => $validated['total_amount'],
+        foreach ($validated['items'] as $item) {
+            $order->orderItems()->create([
+                'menu_item_id' => $item['menu_item_id'],
+                'qty_ordered' => $item['quantity'],
+                'unit_price' => $item['price'],
             ]);
-
-            // Add order items
-            foreach ($validated['items'] as $item) {
-                $order->items()->create([
-                    'menu_item_id' => $item['menu_item_id'],
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'subtotal' => $item['subtotal'],
-                ]);
-            }
-
-            DB::commit();
-
-            return redirect()->route('admin.orders.index')
-                ->with('success', 'Order created successfully');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()
-                ->with('error', 'Failed to create order: ' . $e->getMessage())
-                ->withInput();
         }
+        
+        DB::commit();
+
+        return redirect()->route('admin.orders.index')
+            ->with('success', 'Order created successfully');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Order creation failed: ' . $e->getMessage());
+        return back()->withErrors(['message' => 'Error creating order: ' . $e->getMessage()]);
     }
+
+    // If the request expects JSON, return a 200 OK JSON response
+    if ($request->wantsJson()) {
+        return response()->json(['message' => 'Order created successfully'], 200);
+    }
+}
 
     public function edit($id)
     {
@@ -280,7 +300,7 @@ class OrderController extends Controller
                 'customer:id,first_name,last_name,email',
                 'restaurant:id,restaurant_name,address_id',
                 'restaurant.address:id,street_number,address_line1,city,region,postal_code',
-                'orderStatus:id,name as status',
+                'orderStatus:id,name',
                 'assignedDriver:id,first_name,last_name,is_available',
                 'customerAddress:id,address_line1,address_line2,city,region,postal_code',
                 'orderItems.menuItem:id,item_name,price'
@@ -288,16 +308,57 @@ class OrderController extends Controller
 
             $this->authorize('update', $order);
 
-            $customers = User::select('id', 'first_name', 'last_name', 'email')
+            $mappedOrder = $order->toArray();
+            $mappedOrder['items'] = $order->orderItems->map(function ($item) {
+                return [
+                    'menu_item_id' => $item->menu_item_id,
+                    'quantity' => $item->qty_ordered,
+                    'price' => $item->menuItem->price,
+                    'subtotal' => $item->qty_ordered * $item->menuItem->price,
+                ];
+            });
+
+            $customers = User::with(['addresses'])
                 ->where('role', 'customer')
                 ->orderBy('first_name')
-                ->get();
+                ->get()
+                ->map(function ($customer) {
+                    return [
+                        'id' => $customer->id,
+                        'first_name' => $customer->first_name,
+                        'last_name' => $customer->last_name,
+                        'email' => $customer->email,
+                        'addresses' => $customer->addresses->map(function ($address) {
+                            return [
+                                'id' => $address->id,
+                                'street_number' => $address->street_number,
+                                'address_line1' => $address->address_line1,
+                                'city' => $address->city,
+                                'region' => $address->region,
+                                'postal_code' => $address->postal_code,
+                            ];
+                        })
+                    ];
+                });
 
-            $restaurants = Restaurant::select('id', 'restaurant_name')
+            $restaurants = Restaurant::with(['menuItems'])
                 ->orderBy('restaurant_name')
-                ->get();
+                ->get()
+                ->map(function ($restaurant) {
+                    return [
+                        'id' => $restaurant->id,
+                        'restaurant_name' => $restaurant->restaurant_name,
+                        'menu_items' => $restaurant->menuItems->map(function ($item) {
+                            return [
+                                'id' => $item->id,
+                                'item_name' => $item->item_name,
+                                'price' => $item->price,
+                            ];
+                        })
+                    ];
+                });
 
-            $orderStatuses = OrderStatus::select('id', 'name as status')->get();
+            $orderStatuses = OrderStatus::select('id', 'name')->get();
 
             $drivers = User::select('id', 'first_name', 'last_name', 'is_available')
                 ->where('role', 'driver')
@@ -308,7 +369,7 @@ class OrderController extends Controller
                 ->get();
 
             return Inertia::render('admin/Orders/edit', [
-                'order' => $order,
+                'order' => $mappedOrder,
                 'customers' => $customers,
                 'restaurants' => $restaurants,
                 'orderStatuses' => $orderStatuses,
@@ -348,22 +409,51 @@ public function scopeAvailableDrivers($query, $exceptDriverId = null)
         $validatedData = $request->validate([
             'customer_id' => 'sometimes|exists:users,id',
             'restaurant_id' => 'sometimes|exists:restaurants,id',
-            'customer_address_id' => 'sometimes|exists:customer_addresses,id',
+            'customer_address_id' => 'sometimes|nullable|exists:customer_addresses,id',
             'order_status_id' => 'sometimes|exists:order_statuses,id',
             'assigned_driver_id' => 'sometimes|nullable|exists:users,id',
-            'order_datetime' => 'sometimes|date',
-            'requested_delivery_datetime' => 'sometimes|nullable|date',
+            'order_date_time' => 'sometimes|date',
+            'requested_delivery_date_time' => 'sometimes|nullable|date',
             'delivery_fee' => 'sometimes|numeric|min:0',
             'total_amount' => 'sometimes|numeric|min:0',
+            'items' => 'sometimes|json',
         ]);
 
         DB::beginTransaction();
         try {
+            // Convert empty strings to null for nullable fields
+            if (isset($validatedData['customer_address_id']) && $validatedData['customer_address_id'] === '') {
+                // Keep existing customer_address_id since it's NOT NULL in database
+                unset($validatedData['customer_address_id']);
+            }
+            if (isset($validatedData['assigned_driver_id']) && $validatedData['assigned_driver_id'] === '') {
+                $validatedData['assigned_driver_id'] = null;
+            }
+            
+            // Handle items if provided
+            if (isset($validatedData['items'])) {
+                $items = json_decode($validatedData['items'], true);
+                unset($validatedData['items']);
+                
+                // Sync order items
+                $order->orderItems()->delete(); // Remove old items
+                foreach ($items as $item) {
+                    $order->orderItems()->create([
+                        'menu_item_id' => $item['menu_item_id'],
+                        'qty_ordered' => $item['quantity'],
+                        'unit_price' => $item['price'],
+                    ]);
+                }
+            }
+            
             // If assigning a new driver, verify they are available
             if (isset($validatedData['assigned_driver_id']) && $validatedData['assigned_driver_id'] !== $oldDriverId) {
                 $driver = User::where('id', $validatedData['assigned_driver_id'])
                     ->where('role', 'driver')
-                    ->where('is_available', true)
+                    ->where(function($query) use ($oldDriverId) {
+                        $query->where('is_available', true)
+                              ->orWhere('id', $oldDriverId); // Allow if already assigned to this order
+                    })
                     ->first();
 
                 if (!$driver) {
@@ -405,7 +495,7 @@ public function scopeAvailableDrivers($query, $exceptDriverId = null)
                 return response()->json(['message' => 'Order updated successfully']);
             }
 
-            return back()->with('success', 'Order updated successfully');
+            return redirect()->route('admin.orders.index')->with('success', 'Order updated successfully');
         } catch (\Exception $e) {
             DB::rollback();
             
@@ -454,59 +544,84 @@ public function scopeAvailableDrivers($query, $exceptDriverId = null)
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return redirect('/dashboard');
         }
 
-        $validatedData = $request->validate([
+        $request->validate([
             'order_ids' => 'required|array',
             'order_ids.*' => 'exists:food_orders,id',
-            'action' => 'required|in:update_status,assign_driver,delete',
-            'order_status_id' => 'required_if:action,update_status|exists:name,id',
-            'assigned_driver_id' => 'required_if:action,assign_driver|exists:users,id',
+            'status_id' => 'required|exists:order_statuses,id',
         ]);
 
-        $orderIds = $validatedData['order_ids'];
-
-        DB::beginTransaction();
         try {
-            if ($validatedData['action'] === 'update_status') {
-                FoodOrder::whereIn('id', $orderIds)->update([
-                    'order_status_id' => $validatedData['order_status_id']
-                ]);
-                $message = 'Order statuses updated successfully';
+            DB::beginTransaction();
 
-            } elseif ($validatedData['action'] === 'assign_driver') {
-                FoodOrder::whereIn('id', $orderIds)->update([
-                    'assigned_driver_id' => $validatedData['assigned_driver_id']
-                ]);
-
-                // Mark driver as unavailable
-                User::where('id', $validatedData['assigned_driver_id'])
-                    ->update(['is_available' => false]);
-
-                $message = 'Driver assigned to selected orders successfully';
-
-            } elseif ($validatedData['action'] === 'delete') {
-                // Get orders to be deleted to free up drivers
-                $orders = FoodOrder::whereIn('id', $orderIds)->get();
-                
-                foreach ($orders as $order) {
-                    if ($order->assigned_driver_id) {
-                        User::where('id', $order->assigned_driver_id)
-                            ->update(['is_available' => true]);
-                    }
-                    $order->orderItems()->delete();
-                }
-
-                FoodOrder::whereIn('id', $orderIds)->delete();
-                $message = 'Selected orders deleted successfully';
+            $orders = FoodOrder::whereIn('id', $request->order_ids)->get();
+            
+            foreach ($orders as $order) {
+                $order->update(['order_status_id' => $request->status_id]);
             }
 
             DB::commit();
-            return back()->with('success', $message);
+
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Orders updated successfully']);
+            }
+
+            return redirect()->route('admin.orders.index')->with('success', 'Orders updated successfully');
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->withErrors(['error' => 'Failed to perform bulk operation']);
+            
+            if ($request->wantsJson()) {
+                return response()->json(['error' => $e->getMessage() ?: 'Failed to update orders'], 500);
+            }
+            
+            return back()->withErrors(['error' => $e->getMessage() ?: 'Failed to update orders']);
+        }
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        // Ensure user is admin
+        if (auth()->user()->role !== 'admin') {
+            return redirect('/dashboard');
+        }
+
+        $request->validate([
+            'order_ids' => 'required|array',
+            'order_ids.*' => 'exists:food_orders,id',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $orders = FoodOrder::whereIn('id', $request->order_ids)->get();
+            
+            foreach ($orders as $order) {
+                // Make driver available if assigned
+                if ($order->assigned_driver_id) {
+                    User::where('id', $order->assigned_driver_id)
+                        ->update(['is_available' => true]);
+                }
+                
+                $order->delete();
+            }
+
+            DB::commit();
+
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Orders deleted successfully']);
+            }
+
+            return redirect()->route('admin.orders.index')->with('success', 'Orders deleted successfully');
+        } catch (\Exception $e) {
+            DB::rollback();
+            
+            if ($request->wantsJson()) {
+                return response()->json(['error' => $e->getMessage() ?: 'Failed to delete orders'], 500);
+            }
+            
+            return back()->withErrors(['error' => $e->getMessage() ?: 'Failed to delete orders']);
         }
     }
 
@@ -553,14 +668,48 @@ public function scopeAvailableDrivers($query, $exceptDriverId = null)
 
         $order = FoodOrder::with([
             'customer:id,first_name,last_name,email,phone',
-            'restaurant:id,restaurant_name,address',
-            'deliveryAddress:id,address_line1,address_line2,city,region,postal_code',
+            'restaurant:id,restaurant_name,address_id',
+            'restaurant.address:id,address_line1,address_line2,city,region,postal_code',
+            'customerAddress:id,address_line1,address_line2,city,region,postal_code',
             'orderStatus:id,name as status',
             'assignedDriver:id,first_name,last_name,phone',
             'trackingUpdates' => function ($query) {
-                $query->latest()->limit(10);
+                $query->with('driver:id,first_name,last_name')
+                    ->latest()
+                    ->limit(10);
             }
         ])->findOrFail($id);
+
+        // Format tracking updates
+        $trackingUpdates = $order->trackingUpdates->map(function ($update) {
+            return [
+                'id' => $update->id,
+                'status' => $update->status,
+                'description' => $update->description,
+                'latitude' => $update->latitude,
+                'longitude' => $update->longitude,
+                'created_at' => $update->created_at,
+                'driver' => [
+                    'name' => $update->driver->first_name . ' ' . $update->driver->last_name,
+                ],
+            ];
+        });
+
+        // Get restaurant location
+        $restaurantLocation = $this->geocodingService->getCoordinates(
+            $order->restaurant->address->address . ', ' . 
+            $order->restaurant->address->city . ', ' . 
+            $order->restaurant->address->region . ' ' . 
+            $order->restaurant->address->postal_code
+        );
+
+        // Get delivery location
+        $deliveryLocation = $this->geocodingService->getCoordinates(
+            $order->customerAddress->address . ', ' . 
+            $order->customerAddress->city . ', ' . 
+            $order->customerAddress->region . ' ' . 
+            $order->customerAddress->postal_code
+        );
 
         return Inertia::render('admin/Orders/tracking', [
             'order' => [
@@ -572,13 +721,19 @@ public function scopeAvailableDrivers($query, $exceptDriverId = null)
                 ],
                 'restaurant' => [
                     'name' => $order->restaurant->restaurant_name,
-                    'address' => $order->restaurant->address,
+                    'address' => $order->restaurant->address ? 
+                        $order->restaurant->address->address_line1 . ', ' . 
+                        $order->restaurant->address->city . ', ' . 
+                        $order->restaurant->address->region . ' ' . 
+                        $order->restaurant->address->postal_code : 'Address not available',
+                    'location' => $restaurantLocation,
                 ],
                 'delivery_address' => [
-                    'address' => $order->deliveryAddress->address_line1,
-                    'city' => $order->deliveryAddress->city,
-                    'state' => $order->deliveryAddress->region,
-                    'zip_code' => $order->deliveryAddress->postal_code,
+                    'address' => $order->customerAddress->address_line1,
+                    'city' => $order->customerAddress->city,
+                    'state' => $order->customerAddress->region,
+                    'zip_code' => $order->customerAddress->postal_code,
+                    'location' => $deliveryLocation,
                 ],
                 'order_status' => [
                     'status' => $order->orderStatus->status,
@@ -592,8 +747,9 @@ public function scopeAvailableDrivers($query, $exceptDriverId = null)
                         'longitude' => $order->trackingUpdates->first()->longitude,
                     ] : null,
                 ] : null,
-                'estimated_delivery_time' => $order->requested_delivery_datetime,
+                'estimated_delivery_time' => $order->requested_delivery_date_time,
                 'created_at' => $order->created_at,
+                'tracking_updates' => $trackingUpdates,
             ],
         ]);
     }
@@ -716,6 +872,55 @@ public function scopeAvailableDrivers($query, $exceptDriverId = null)
 
     public function export(Request $request)
     {
+        $type = $request->get('type', 'list'); // Default to 'list'
+
+        if ($type === 'statistics') {
+            return $this->exportStatistics($request);
+        }
+
+        return $this->exportList($request);
+    }
+    
+    protected function exportStatistics(Request $request)
+    {
+        $totalOrders = FoodOrder::count();
+        $totalRevenue = FoodOrder::sum('total_amount');
+        $averageOrderValue = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0;
+        $ordersByStatus = FoodOrder::select('order_statuses.name as status', DB::raw('count(*) as count'))
+            ->join('order_statuses', 'food_orders.order_status_id', '=', 'order_statuses.id')
+            ->groupBy('order_statuses.name')
+            ->get();
+        $ordersByRestaurant = FoodOrder::select('restaurants.restaurant_name', DB::raw('count(*) as count'), DB::raw('sum(food_orders.total_amount) as revenue'))
+            ->join('restaurants', 'food_orders.restaurant_id', '=', 'restaurants.id')
+            ->groupBy('restaurants.restaurant_name')->orderBy('count', 'desc')->limit(10)->get();
+
+        $filename = 'order_statistics_export_' . date('Y-m-d_H-i-s') . '.csv';
+        $headers = ['Content-Type' => 'text/csv', 'Content-Disposition' => 'attachment; filename="' . $filename . '"'];
+
+        $callback = function () use ($totalOrders, $totalRevenue, $averageOrderValue, $ordersByStatus, $ordersByRestaurant) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Metric', 'Value']);
+            fputcsv($file, ['Total Orders', $totalOrders]);
+            fputcsv($file, ['Total Revenue', $totalRevenue]);
+            fputcsv($file, ['Average Order Value', $averageOrderValue]);
+            fputcsv($file, []);
+            fputcsv($file, ['Status', 'Order Count']);
+            foreach ($ordersByStatus as $status) {
+                fputcsv($file, [$status->status, $status->count]);
+            }
+            fputcsv($file, []);
+            fputcsv($file, ['Restaurant', 'Order Count', 'Revenue']);
+            foreach ($ordersByRestaurant as $restaurant) {
+                fputcsv($file, [$restaurant->restaurant_name, $restaurant->count, $restaurant->revenue]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    protected function exportList(Request $request)
+    {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
             return redirect('/dashboard');
@@ -747,45 +952,40 @@ public function scopeAvailableDrivers($query, $exceptDriverId = null)
                 });
             });
 
-        if ($request->filled('order_ids')) {
-            $query->whereIn('id', $request->order_ids);
-        }
-
         $orders = $query->get();
 
+        $filename = 'orders_export_' . date('Y-m-d_H-i-s') . '.csv';
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="orders.csv"',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
-        $callback = function() use ($orders) {
+        $callback = function () use ($orders) {
             $file = fopen('php://output', 'w');
             
-            // Add headers
+            // CSV headers
             fputcsv($file, [
                 'Order ID',
-                'Customer',
+                'Customer Name',
+                'Customer Email',
                 'Restaurant',
                 'Status',
-                'Driver',
-                'Order Date',
-                'Delivery Date',
-                'Delivery Fee',
                 'Total Amount',
+                'Order Date',
+                'Driver',
             ]);
 
-            // Add data
+            // CSV data
             foreach ($orders as $order) {
                 fputcsv($file, [
                     $order->id,
                     $order->customer->first_name . ' ' . $order->customer->last_name,
+                    $order->customer->email,
                     $order->restaurant->restaurant_name,
                     $order->orderStatus->name,
-                    $order->assignedDriver ? $order->assignedDriver->first_name . ' ' . $order->assignedDriver->last_name : 'Not assigned',
-                    $order->order_date_time,
-                    $order->requested_delivery_date_time,
-                    $order->delivery_fee,
                     $order->total_amount,
+                    $order->order_date_time,
+                    $order->assignedDriver ? $order->assignedDriver->first_name . ' ' . $order->assignedDriver->last_name : 'Not assigned',
                 ]);
             }
 
@@ -793,5 +993,132 @@ public function scopeAvailableDrivers($query, $exceptDriverId = null)
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * API method to get tracking data for an order
+     */
+    public function getTrackingData($id)
+    {
+        $order = FoodOrder::with([
+            'customer:id,first_name,last_name,email,phone',
+            'restaurant:id,restaurant_name,address_id',
+            'restaurant.address:id,address_line1,address_line2,city,region,postal_code',
+            'customerAddress:id,address_line1,address_line2,city,region,postal_code',
+            'orderStatus:id,name as status',
+            'assignedDriver:id,first_name,last_name,phone',
+            'trackingUpdates' => function ($query) {
+                $query->with('driver:id,first_name,last_name')
+                    ->latest()
+                    ->limit(10);
+            }
+        ])->findOrFail($id);
+
+        // Format tracking updates
+        $trackingUpdates = $order->trackingUpdates->map(function ($update) {
+            return [
+                'id' => $update->id,
+                'status' => $update->status,
+                'description' => $update->description,
+                'latitude' => $update->latitude,
+                'longitude' => $update->longitude,
+                'created_at' => $update->created_at,
+                'driver' => [
+                    'name' => $update->driver->first_name . ' ' . $update->driver->last_name,
+                ],
+            ];
+        });
+
+        // Get restaurant location
+        $restaurantLocation = $this->geocodingService->getCoordinates(
+            $order->restaurant->address->address . ', ' . 
+            $order->restaurant->address->city . ', ' . 
+            $order->restaurant->address->region . ' ' . 
+            $order->restaurant->address->postal_code
+        );
+
+        // Get delivery location
+        $deliveryLocation = $this->geocodingService->getCoordinates(
+            $order->customerAddress->address . ', ' . 
+            $order->customerAddress->city . ', ' . 
+            $order->customerAddress->region . ' ' . 
+            $order->customerAddress->postal_code
+        );
+
+        return response()->json([
+            'order' => [
+                'id' => $order->id,
+                'customer' => [
+                    'name' => $order->customer->first_name . ' ' . $order->customer->last_name,
+                    'email' => $order->customer->email,
+                    'phone' => $order->customer->phone,
+                ],
+                'restaurant' => [
+                    'name' => $order->restaurant->restaurant_name,
+                    'address' => $order->restaurant->address ? 
+                        $order->restaurant->address->address_line1 . ', ' . 
+                        $order->restaurant->address->city . ', ' . 
+                        $order->restaurant->address->region . ' ' . 
+                        $order->restaurant->address->postal_code : 'Address not available',
+                    'location' => $restaurantLocation,
+                ],
+                'delivery_address' => [
+                    'address' => $order->customerAddress->address_line1,
+                    'city' => $order->customerAddress->city,
+                    'state' => $order->customerAddress->region,
+                    'zip_code' => $order->customerAddress->postal_code,
+                    'location' => $deliveryLocation,
+                ],
+                'order_status' => [
+                    'status' => $order->orderStatus->status,
+                    'updated_at' => $order->updated_at,
+                ],
+                'assigned_driver' => $order->assignedDriver ? [
+                    'name' => $order->assignedDriver->first_name . ' ' . $order->assignedDriver->last_name,
+                    'phone' => $order->assignedDriver->phone,
+                    'current_location' => $order->trackingUpdates->first() ? [
+                        'latitude' => $order->trackingUpdates->first()->latitude,
+                        'longitude' => $order->trackingUpdates->first()->longitude,
+                    ] : null,
+                ] : null,
+                'estimated_delivery_time' => $order->requested_delivery_date_time,
+                'created_at' => $order->created_at,
+                'tracking_updates' => $trackingUpdates,
+            ],
+        ]);
+    }
+
+    /**
+     * API method to add a tracking update for an order
+     */
+    public function addTrackingUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|string',
+            'description' => 'required|string',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+        ]);
+
+        $order = FoodOrder::findOrFail($id);
+        
+        // Ensure the user is the assigned driver or an admin
+        if (auth()->user()->role !== 'admin' && 
+            $order->assigned_driver_id !== auth()->id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $trackingUpdate = $order->trackingUpdates()->create([
+            'driver_id' => auth()->id(),
+            'status' => $request->status,
+            'description' => $request->description,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+        ]);
+
+        return response()->json([
+            'message' => 'Tracking update added successfully',
+            'tracking_update' => $trackingUpdate,
+        ], 201);
     }
 }

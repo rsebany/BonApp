@@ -25,13 +25,23 @@ interface User {
     role: string;
     email_verified_at: string | null;
     created_at: string;
+    is_available: boolean;
 }
 
-export default function UsersPage({ users = [] }: { users?: User[] }) {
+interface PaginatedUsers {
+    data: User[];
+    links: object;
+    meta: object;
+}
+
+export default function UsersPage({ users }: { users: PaginatedUsers }) {
     const [isDeleting, setIsDeleting] = React.useState<number | null>(null);
     const [deleteError, setDeleteError] = React.useState<string | null>(null);
     const [dialogOpen, setDialogOpen] = React.useState<number | null>(null);
     const [userToDelete, setUserToDelete] = React.useState<User | null>(null);
+
+    // Safely access users data
+    const usersList = users?.data || [];
 
     const getRoleBadge = (role: string) => {
         const roleMap: Record<string, 'purple' | 'blue' | 'green' | 'gray'> = {
@@ -109,7 +119,7 @@ export default function UsersPage({ users = [] }: { users?: User[] }) {
                 </div>
 
                 <div className="bg-white rounded-lg shadow overflow-hidden">
-                    {users.length === 0 ? (
+                    {usersList.length === 0 ? (
                         <div className="p-4 text-center text-gray-500">
                             No users found
                         </div>
@@ -126,14 +136,14 @@ export default function UsersPage({ users = [] }: { users?: User[] }) {
                                 </tr>
                             </thead>
                             <tbody className="[&_tr:last-child]:border-0">
-                                {users.map((user) => (
+                                {usersList.map((user) => (
                                     <tr key={user.id} className="border-b transition-colors hover:bg-muted/50">
                                         <td className="p-4 align-middle">{`${user.first_name} ${user.last_name}`}</td>
                                         <td className="p-4 align-middle">{user.email}</td>
                                         <td className="p-4 align-middle">{getRoleBadge(user.role)}</td>
                                         <td className="p-4 align-middle">
-                                            <Badge color={user.email_verified_at ? 'green' : 'yellow'}>
-                                                {user.email_verified_at ? 'Verified' : 'Pending'}
+                                            <Badge color={user.is_available ? 'green' : 'red'}>
+                                                {user.is_available ? 'Available' : 'Unavailable'}
                                             </Badge>
                                         </td>
                                         <td className="p-4 align-middle">

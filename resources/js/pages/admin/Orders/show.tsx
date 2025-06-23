@@ -1,8 +1,8 @@
 import React, { useState} from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/layouts/Admin/AdminLayout';
-import { ArrowLeft, MapPin, Phone, Mail, Clock, Truck, CheckCircle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft, MapPin, Phone, Mail, CheckCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge, Button } from '@/components/ui';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { ChevronsUpDown } from 'lucide-react';
@@ -36,7 +36,6 @@ interface Order {
   };
   orderStatus: {
     id: number;
-    status: string;
     name: string;
   };
   assignedDriver?: {
@@ -86,7 +85,6 @@ interface Driver {
 interface OrderStatus {
   name: string;
   id: number;
-  status: string;
 }
 
 interface PageProps {
@@ -123,6 +121,9 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
       assigned_driver_id: selectedDriver || null,
       order_status_id: selectedStatus,
     }, {
+      onSuccess: () => {
+        router.visit(route('admin.orders.index'));
+      },
       onFinish: () => setIsUpdating(false),
     });
   };
@@ -214,7 +215,7 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button variant="outline" size="sm" className="w-full justify-between">
-                          {orderStatuses.find(s => s.id.toString() === selectedStatus)?.status || 'Select Status'}
+                          {orderStatuses.find(s => s.id.toString() === selectedStatus)?.name || 'Select Status'}
                           <ChevronsUpDown className="ml-auto h-4 w-4" />
                         </Button>
                       </PopoverTrigger>
@@ -287,13 +288,11 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
                   </div>
                 </div>
                 
-                <Button 
-                  onClick={handleQuickUpdate}
-                  disabled={isUpdating}
-                  className="w-full md:w-auto"
-                >
-                  {isUpdating ? 'Updating...' : 'Update Order'}
-                </Button>
+                <div className="flex justify-end">
+                  <Button onClick={handleQuickUpdate} disabled={isUpdating}>
+                    {isUpdating ? 'Updating...' : 'Quick Update'}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -312,22 +311,34 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
                       <div key={item.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
                         <div className="flex-1">
                           <h4 className="font-medium">{item.menuItem.item_name}</h4>
-                          <p className="text-sm text-gray-600">
-                            {formatCurrency(item.menuItem.price)} × {item.quantity}
+                          <p className="text-sm text-gray-500">
+                            {item.quantity} x {formatCurrency(item.menuItem.price)}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">
-                            {formatCurrency(parseFloat(item.menuItem.price) * item.quantity)}
-                          </p>
+                          <p className="font-semibold">{formatCurrency(parseFloat(item.menuItem.price) * item.quantity)}</p>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500">No items found for this order.</p>
+                  <p>No items found for this order.</p>
                 )}
               </CardContent>
+              <CardFooter className="flex flex-col items-end space-y-2">
+                <div className="w-full flex justify-between">
+                  <span className="text-gray-600">Subtotal:</span>
+                  <span className="font-semibold">{formatCurrency(subtotal)}</span>
+                </div>
+                <div className="w-full flex justify-between">
+                  <span className="text-gray-600">Delivery Fee:</span>
+                  <span className="font-semibold">{formatCurrency(deliveryFee)}</span>
+                </div>
+                <div className="w-full flex justify-between text-lg font-bold">
+                  <span>Total:</span>
+                  <span>{formatCurrency(total)}</span>
+                </div>
+              </CardFooter>
             </Card>
 
             {/* Customer Information */}
@@ -404,99 +415,64 @@ export default function OrderShow({ order, availableDrivers, orderStatuses }: Pa
             </Card>
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar with Customer/Restaurant/Driver Info */}
           <div className="space-y-6">
-            {/* Order Summary */}
+            {/* Customer Details */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5" />
-                  Order Summary
-                </CardTitle>
+                <CardTitle>Customer</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>{formatCurrency(subtotal)}</span>
+              <CardContent className="space-y-2">
+                <Link href={route('admin.users.show', order.customer.id)} className="font-semibold text-blue-600 hover:underline">
+                  {order.customer.first_name} {order.customer.last_name}
+                </Link>
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <Mail className="h-4 w-4" />
+                  <span>{order.customer.email}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Delivery Fee</span>
-                  <span>{formatCurrency(deliveryFee)}</span>
-                </div>
-                <div className="border-t pt-3">
-                  <div className="flex justify-between font-bold text-lg">
-                    <span>Total</span>
-                    <span>{formatCurrency(total)}</span>
+                {order.customer.phone && (
+                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <Phone className="h-4 w-4" />
+                    <span>{order.customer.phone}</span>
                   </div>
+                )}
+                <div className="pt-2">
+                  <h4 className="font-medium">Delivery Address</h4>
+                  <p className="text-sm text-gray-600">{formatAddress(order.customerAddress)}</p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Driver Information */}
+            {/* Restaurant Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Restaurant</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Link href={route('admin.restaurants.show', order.restaurant.id)} className="font-semibold text-blue-600 hover:underline">
+                  {order.restaurant.restaurant_name}
+                </Link>
+                <div className="pt-2">
+                  <h4 className="font-medium">Address</h4>
+                  <p className="text-sm text-gray-600">{formatAddress(order.restaurant.address)}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Driver Details */}
             {order.assignedDriver && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Truck className="h-5 w-5" />
-                    Assigned Driver
-                  </CardTitle>
+                  <CardTitle>Driver</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">
-                      {order.assignedDriver.first_name} {order.assignedDriver.last_name}
-                    </span>
-                  </div>
+                  <Link href={route('admin.users.show', order.assignedDriver.id)} className="font-semibold text-blue-600 hover:underline">
+                    {order.assignedDriver.first_name} {order.assignedDriver.last_name}
+                  </Link>
                   {order.assignedDriver.phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-gray-500" />
-                      <span className="text-gray-600">{order.assignedDriver.phone}</span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Timeline */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Order Timeline
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Order Placed</span>
-                    <span>{new Date(order.created_at).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Last Updated</span>
-                    <span>{new Date(order.updated_at).toLocaleString()}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Ratings */}
-            {(order.customer_driver_rating || order.customer_restaurant_rating) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Customer Ratings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {order.customer_restaurant_rating && (
-                    <div className="flex justify-between">
-                      <span>Restaurant Rating</span>
-                      <span>{order.customer_restaurant_rating}/5 ⭐</span>
-                    </div>
-                  )}
-                  {order.customer_driver_rating && (
-                    <div className="flex justify-between">
-                      <span>Driver Rating</span>
-                      <span>{order.customer_driver_rating}/5 ⭐</span>
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <Phone className="h-4 w-4" />
+                      <span>{order.assignedDriver.phone}</span>
                     </div>
                   )}
                 </CardContent>

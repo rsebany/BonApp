@@ -4,15 +4,21 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Models\User;
 
 class RestaurantResource extends JsonResource
 {
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
             'restaurant_name' => $this->restaurant_name,
-            'email' => $this->email,
+            'email' => $this->when($this->shouldIncludeEmail($request), $this->email),
             'phone' => $this->phone,
             'description' => $this->description,
             'cuisine_type' => $this->cuisine_type,
@@ -20,13 +26,12 @@ class RestaurantResource extends JsonResource
             'delivery_time' => $this->delivery_time,
             'minimum_order' => $this->minimum_order,
             'delivery_fee' => $this->delivery_fee,
-            'image_path' => $this->image_path,
-            'image_url' => $this->image_url,
-            'is_active' => $this->is_active,
-            'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
-            'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
+            'is_active' => $this->when($this->shouldIncludeAdminFields($request), $this->is_active),
+            'status' => $this->getStatusLabel(),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
             
-            // Address relationship
+            // Conditional relationships
             'address' => $this->whenLoaded('address', function () {
                 return [
                     'id' => $this->address->id,
@@ -38,32 +43,77 @@ class RestaurantResource extends JsonResource
                     'region' => $this->address->region,
                     'postal_code' => $this->address->postal_code,
                     'country_id' => $this->address->country_id,
-                    'full_address' => $this->address->full_address,
-                    'short_address' => $this->address->short_address,
-                    'country' => $this->whenLoaded('address.country', function () {
-                        return [
-                            'id' => $this->address->country->id,
-                            'country_name' => $this->address->country->country_name,
-                            'country_code' => $this->address->country->country_code,
-                        ];
-                    }),
+                    'country_name' => $this->address->country->country_name ?? null,
                 ];
             }),
             
-            // Menu items relationship
-            'menu_items' => $this->whenLoaded('menuItems', function () {
-                return $this->menuItems->map(function ($item) {
-                    return [
-                        'id' => $item->id,
-                        'item_name' => $item->item_name,
-                        'price' => $item->price,
-                        'is_available' => $item->is_available,
-                    ];
-                });
+            'owner' => $this->whenLoaded('user', function () use ($request) {
+                return $this->user ? [
+                    'id' => $this->user->id,
+                    'name' => $this->user->full_name,
+                    'email' => $this->when($this->shouldIncludeOwnerEmail($request), $this->user->email),
+                ] : null;
             }),
             
-            // Additional computed attributes
-            'full_address' => $this->full_address,
+            // Counts with conditional display
+            'menu_items_count' => $this->whenCounted('menuItems'),
+            'active_menu_items_count' => $this->when($this->shouldIncludeAdminFields($request), 
+                $this->menuItems()->where('is_available', true)->count()),
+            'orders_count' => $this->whenCounted('orders'),
+            
+            // Additional user-specific data
+            'is_owner' => $this->isOwnedBy($request->user()),
+            'can_edit' => $this->canBeEditedBy($request->user()),
         ];
+    }
+
+    /**
+     * Determine if email should be included in response
+     */
+    private function shouldIncludeEmail(Request $request): bool
+    {
+        $user = $request->user();
+        return $user && ($this->isOwnedBy($user) || $user->isAdmin());
+    }
+
+    /**
+     * Determine if owner email should be included
+     */
+    private function shouldIncludeOwnerEmail(Request $request): bool
+    {
+        $user = $request->user();
+        return $user && ($user->isAdmin() || $user->id === $this->user_id);
+    }
+
+    /**
+     * Determine if admin-only fields should be included
+     */
+    private function shouldIncludeAdminFields(Request $request): bool
+    {
+        return $request->user()?->isAdmin() ?? false;
+    }
+    /**
+     * Check if restaurant is owned by user
+     */
+    private function isOwnedBy(?User $user): bool
+    {
+        return $user && $user->id === $this->user_id;
+    }
+
+    /**
+     * Check if user can edit this restaurant
+     */
+    private function canBeEditedBy(?User $user): bool
+    {
+        return $user && ($user->isAdmin() || $this->isOwnedBy($user));
+    }
+
+    /**
+     * Get user-friendly status label
+     */
+    private function getStatusLabel(): string
+    {
+        if (!$this->is_active) return 'Pending Approval';
+        return $this->is_open ? 'Open Now' : 'Closed';
     }
 }

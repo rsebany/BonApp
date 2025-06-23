@@ -8,7 +8,8 @@ import {
   MapPin,
   Star,
   ChevronRight,
-  MoreHorizontal
+  MoreHorizontal,
+  BarChart3
 } from 'lucide-react';
 import {
   AreaChart,
@@ -35,7 +36,7 @@ type StatCardProps = {
   };
 };
 
-type OrderStatusType = 'Delivered' | 'In Transit' | 'Preparing' | 'Cancelled';
+type OrderStatusType = 'Delivered' | 'Out for Delivery' | 'Preparing' | 'Ready' | 'Confirmed' | 'Pending' | 'Cancelled';
 
 type GrowthMetrics = {
   orders_growth: number;
@@ -150,8 +151,11 @@ const StatCard: React.FC<StatCardProps> = ({ stat }) => {
 const OrderStatusBadge = ({ status }: { status: string }) => {
   const colors: Record<OrderStatusType, string> = {
     'Delivered': 'bg-green-100 text-green-700',
-    'In Transit': 'bg-yellow-100 text-yellow-700',
+    'Out for Delivery': 'bg-yellow-100 text-yellow-700',
     'Preparing': 'bg-blue-100 text-blue-700',
+    'Ready': 'bg-purple-100 text-purple-700',
+    'Confirmed': 'bg-cyan-100 text-cyan-700',
+    'Pending': 'bg-orange-100 text-orange-700',
     'Cancelled': 'bg-red-100 text-red-700'
   };
 
@@ -167,10 +171,16 @@ const getStatusColor = (status: string): string => {
   switch(status) {
     case 'Delivered':
       return '#10B981';
-    case 'In Transit':
+    case 'Out for Delivery':
       return '#F59E0B';
     case 'Preparing':
       return '#3B82F6';
+    case 'Ready':
+      return '#8B5CF6';
+    case 'Confirmed':
+      return '#2563EB';
+    case 'Pending':
+      return '#FB7185';
     case 'Cancelled':
       return '#EF4444';
     default:
@@ -192,6 +202,13 @@ export const AdminMain: React.FC = () => {
   const topRestaurants = props.topRestaurants || [];
   const recentOrders = props.recentOrders || [];
   const growthMetrics = props.growthMetrics || DEFAULT_GROWTH_METRICS;
+
+  // Handle time range change
+  const handleTimeRangeChange = (range: string) => {
+    setTimeRange(range);
+    // Reload the page with new time range
+    window.location.href = `${route('admin.dashboard')}?timeRange=${range}`;
+  };
 
   // Format stats data
   const statCards = [
@@ -217,20 +234,20 @@ export const AdminMain: React.FC = () => {
     }
   ];
 
-  // Format today's stats
+  // Format today's stats with growth indicators
   const todayStatCards = [
     { 
       label: "Today's Orders", 
       value: todayStats.orders.toLocaleString(), 
-      change: '', 
-      trend: 'up' as const, 
+      change: growthMetrics.orders_growth >= 0 ? `+${growthMetrics.orders_growth}%` : `${growthMetrics.orders_growth}%`, 
+      trend: growthMetrics.orders_growth >= 0 ? 'up' as const : 'down' as const, 
       icon: ShoppingBag 
     },
     { 
       label: "Today's Revenue", 
       value: `$${todayStats.revenue.toLocaleString(undefined, {maximumFractionDigits: 2})}`, 
-      change: '', 
-      trend: 'up' as const, 
+      change: growthMetrics.revenue_growth >= 0 ? `+${growthMetrics.revenue_growth}%` : `${growthMetrics.revenue_growth}%`, 
+      trend: growthMetrics.revenue_growth >= 0 ? 'up' as const : 'down' as const, 
       icon: DollarSign 
     },
     { 
@@ -254,7 +271,7 @@ export const AdminMain: React.FC = () => {
           {['24h', '7d', '30d', '90d'].map((range) => (
             <button
               key={range}
-              onClick={() => setTimeRange(range)}
+              onClick={() => handleTimeRangeChange(range)}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 timeRange === range 
                   ? 'bg-blue-600 text-white' 
@@ -385,13 +402,22 @@ export const AdminMain: React.FC = () => {
           <div className="p-6 border-b border-gray-100">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">Recent Orders</h3>
-              <Link 
-                href={route('admin.orders.index')} 
-                className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
-              >
-                <span>View All</span>
-                <ChevronRight className="w-4 h-4" />
-              </Link>
+              <div className="flex items-center space-x-3">
+                <Link 
+                  href={route('admin.orders.statistics')} 
+                  className="flex items-center space-x-1 text-purple-600 hover:text-purple-700 text-sm font-medium"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  <span>Statistics</span>
+                </Link>
+                <Link 
+                  href={route('admin.orders.index')} 
+                  className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  <span>View All</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
             </div>
           </div>
           <div className="divide-y divide-gray-100">
@@ -473,7 +499,7 @@ export const AdminMain: React.FC = () => {
             <span className="text-3xl font-bold text-gray-900">
               {growthMetrics.orders_growth >= 0 ? '+' : ''}{growthMetrics.orders_growth}%
             </span>
-            <span className="text-sm text-gray-500 mb-1">vs last month</span>
+            <span className="text-sm text-gray-500 mb-1">vs previous {timeRange}</span>
           </div>
           <div className={`mt-2 flex items-center ${
             growthMetrics.orders_growth >= 0 ? 'text-green-600' : 'text-red-600'
@@ -493,7 +519,7 @@ export const AdminMain: React.FC = () => {
             <span className="text-3xl font-bold text-gray-900">
               {growthMetrics.revenue_growth >= 0 ? '+' : ''}{growthMetrics.revenue_growth}%
             </span>
-            <span className="text-sm text-gray-500 mb-1">vs last month</span>
+            <span className="text-sm text-gray-500 mb-1">vs previous {timeRange}</span>
           </div>
           <div className={`mt-2 flex items-center ${
             growthMetrics.revenue_growth >= 0 ? 'text-green-600' : 'text-red-600'
