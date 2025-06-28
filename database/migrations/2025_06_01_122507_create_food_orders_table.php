@@ -22,6 +22,8 @@ return new class extends Migration
             $table->dateTime('requested_delivery_date_time')->nullable();
             $table->decimal('delivery_fee', 8, 2);
             $table->decimal('total_amount', 10, 2);
+            $table->string('delivery_time')->nullable();
+            $table->text('notes')->nullable();
             $table->tinyInteger('cust_driver_rating')->nullable();
             $table->tinyInteger('cust_restaurant_rating')->nullable();
             $table->timestamps();

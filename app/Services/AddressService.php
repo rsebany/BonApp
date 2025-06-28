@@ -12,13 +12,12 @@ class AddressService
 {
     public function getUserAddresses(User $user): Collection
     {
-        return $user->customerAddresses()->with('address')->get();
+        return $user->customerAddresses()->with(['address.country'])->get();
     }
 
     public function createAddress(User $user, array $data): CustomerAddress
     {
         $address = Address::create([
-            'user_id' => $user->id,
             'unit_number' => $data['unit_number'] ?? null,
             'street_number' => $data['street_number'],
             'address_line1' => $data['address_line1'],
@@ -39,7 +38,7 @@ class AddressService
         Gate::authorize('update', $customerAddress);
         
         $customerAddress->address->update($data);
-        return $customerAddress->fresh()->load('address');
+        return $customerAddress->fresh()->load('address.country');
     }
 
     public function deleteAddress(User $user, CustomerAddress $customerAddress): void
@@ -48,6 +47,22 @@ class AddressService
         
         $address = $customerAddress->address;
         $customerAddress->delete();
-        $address->delete();
+        
+        if (!$address->customerAddresses()->exists()) {
+            $address->delete();
+        }
+    }
+
+    public function getAddressById(int $id): ?Address
+    {
+        return Address::with('country')->find($id);
+    }
+
+    public function getUserAddressById(User $user, int $customerAddressId): ?CustomerAddress
+    {
+        return $user->customerAddresses()
+            ->with(['address.country'])
+            ->where('id', $customerAddressId)
+            ->first();
     }
 }

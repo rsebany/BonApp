@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             DriverSeeder::class,
             OrderStatusHistorySeeder::class,
             OrderTrackingUpdateSeeder::class,
+            ReviewSeeder::class,
         ]);
     }
 }

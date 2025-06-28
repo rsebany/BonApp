@@ -59,6 +59,6 @@ class MenuItem extends Model
 
     public function getFormattedPriceAttribute(): string
     {
-        return number_format($this->price, 2);
+        return number_format((float) $this->price, 2);
     }
 }

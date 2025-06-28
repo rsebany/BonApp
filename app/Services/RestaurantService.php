@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Gate;
 
 class RestaurantService
 {
-    public function getAllRestaurants(User $user = null, string $searchTerm = null): Collection
+    public function getAllRestaurants(User $user = null, string $searchTerm = null, $lat = null, $lng = null): Collection
     {
         $query = Restaurant::query()->with(['address.country']);
 
@@ -33,7 +33,38 @@ class RestaurantService
             $query->where('is_active', true);
         }
         
-        return $query->get();
+        $restaurants = $query->get();
+
+        // Calculate distance if lat/lng provided
+        if ($lat && $lng) {
+            foreach ($restaurants as $restaurant) {
+                if ($restaurant->latitude && $restaurant->longitude) {
+                    $distance_km = $this->haversineDistance($lat, $lng, $restaurant->latitude, $restaurant->longitude);
+                    $restaurant->distance_km = $distance_km;
+                    $restaurant->distance_miles = $distance_km * 0.621371;
+                } else {
+                    $restaurant->distance_km = null;
+                    $restaurant->distance_miles = null;
+                }
+            }
+        }
+
+        return $restaurants;
+    }
+
+    // Haversine formula in km
+    private function haversineDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371; // km
+        $lat1 = deg2rad($lat1);
+        $lon1 = deg2rad($lon1);
+        $lat2 = deg2rad($lat2);
+        $lon2 = deg2rad($lon2);
+        $dlat = $lat2 - $lat1;
+        $dlon = $lon2 - $lon1;
+        $a = sin($dlat/2) * sin($dlat/2) + cos($lat1) * cos($lat2) * sin($dlon/2) * sin($dlon/2);
+        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+        return $earthRadius * $c;
     }
 
     public function createRestaurant(User $user, array $data): Restaurant

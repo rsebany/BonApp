@@ -1,0 +1,48 @@
+/* Custom CSS for hiding scrollbars and sidebar enhancements */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth scrolling for better UX */
+.scrollbar-hide {
+  scroll-behavior: smooth;
+}
+
+/* Center feed scrolling improvements */
+.center-feed-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* For better iOS scrolling */
+}
+
+/* Ensure proper height calculation */
+.center-feed-container {
+  height: calc(100vh - 4rem); /* 4rem = 64px for header */
+  max-height: calc(100vh - 4rem);
+}
+
+/* Optional: Add subtle scroll indicators */
+.scroll-indicator {
+  position: relative;
+}
+
+.scroll-indicator::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(transparent, rgba(0,0,0,0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.scroll-indicator:hover::after {
+  opacity: 1;
+} 

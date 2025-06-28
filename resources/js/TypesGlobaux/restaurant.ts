@@ -1,6 +1,15 @@
 import { Address } from "cluster";
 import { ReactNode } from "react";
 
+export interface Review {
+    id: number;
+    user_name: string;
+    rating: number;
+    comment?: string;
+    is_verified: boolean;
+    created_at: string;
+}
+
 export interface Restaurant {
     phone: string;
     restaurant_name: ReactNode;
@@ -15,6 +24,8 @@ export interface Restaurant {
     logo_url: string;
     cover_url: string;
     is_open: boolean;
+    review_count?: number;
+    reviews?: Review[];
 }
 
 export interface MenuCategory {

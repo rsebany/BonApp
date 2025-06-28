@@ -16,6 +16,7 @@ use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\MenuItemController as AdminMenuItemController;
 use App\Http\Controllers\Settings\PasswordController;
+use App\Http\Controllers\UserNotificationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Models\Restaurant;
@@ -26,7 +27,7 @@ Route::get('/', function () {
     if (auth()->check()) {
         return auth()->user()->role === 'admin'
              ? redirect()->route('admin.dashboard')
-            : redirect()->route('user.dashboard');
+            : redirect()->route('user.home');
     }
 
     $featuredRestaurants = Restaurant::with('address.country')
@@ -82,18 +83,26 @@ Route::get('/', function () {
 })->name('home');
 
 // Authenticated user routes
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     // User dashboard
-    Route::get('/dashboard', function () {
+    Route::get('/home', function () {
         return Inertia::render('Dashboard/User');
-    })->name('user.dashboard');
+    })->name('user.home');
     
     // User resources
-    Route::resource('addresses', AddressController::class)->except(['edit', 'update']);
+    Route::resource('addresses', AddressController::class);
     Route::resource('orders', OrderController::class)->except(['edit', 'update']);
+        
+    // Restaurant favorites page (must come before resource route)
+    Route::get('restaurants/favorite', [RestaurantController::class, 'favorites'])
+        ->name('restaurants.favorites');
         
     // Restaurant routes
     Route::resource('restaurants', RestaurantController::class);
+    
+    // Restaurant favorite toggle
+    Route::post('restaurants/{restaurant}/favorite', [RestaurantController::class, 'toggleFavorite'])
+        ->name('restaurants.favorite');
         
     // Menu items with proper shallow nesting
     Route::prefix('restaurants/{restaurant}')->group(function () {
@@ -114,12 +123,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('orders/{order}/rate', [OrderController::class, 'rate'])
         ->name('orders.rate');
     
+    // User notifications for sidebar
+    Route::prefix('user/notifications')->group(function () {
+        Route::get('/', [UserNotificationController::class, 'index'])->name('user.notifications.index');
+        Route::patch('/{id}/read', [UserNotificationController::class, 'markAsRead'])->name('user.notifications.read');
+        Route::patch('/read-all', [UserNotificationController::class, 'markAllAsRead'])->name('user.notifications.read-all');
+        Route::get('/unread-count', [UserNotificationController::class, 'getUnreadCount'])->name('user.notifications.unread-count');
+    });
+
+    // User current orders for sidebar
+    Route::prefix('user/orders')->group(function () {
+        Route::get('/current', [OrderController::class, 'getCurrentOrders'])->name('user.orders.current');
+        Route::get('/history', [OrderController::class, 'getOrderHistory'])->name('user.orders.history');
+    });
+    
     // Profile routes
     Route::prefix('profile')->group(function () {
         Route::get('/', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
+
+    // User Order History
+    Route::get('/user/orders/history', [OrderController::class, 'orderHistoryIndex'])->name('orders.history.index');
+    Route::get('/user/orders/{id}/history', [OrderController::class, 'orderHistory'])->name('orders.history');
 });
 
 // Admin routes with role-based middleware
@@ -164,7 +191,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
         ]);
 
     // Additional route for fetching restaurant menu items
-    Route::get('/restaurants/{restaurant}/menu-items', function (\App\Models\Restaurant $restaurant) {
+    Route::get('/restaurants/{restaurant}/menu-items', function (Restaurant $restaurant) {
         return response()->json(
             $restaurant->menuItems()->select('id', 'item_name', 'price')->get()
         );
@@ -231,3 +258,16 @@ Route::post('/logout', function () {
 // Additional route files
 require __DIR__.'/auth.php';
 require __DIR__.'/settings.php';
+
+// Public info pages
+Route::get('/support', function () {
+    return Inertia::render('Support');
+})->name('support');
+
+Route::get('/about', function () {
+    return Inertia::render('About');
+})->name('about');
+
+Route::get('/terms', function () {
+    return Inertia::render('Terms');
+})->name('terms');

@@ -34,7 +34,19 @@ class RestaurantFactory extends Factory
             'delivery_time' => $this->faker->numberBetween(20, 90),
             'delivery_fee' => $this->faker->randomFloat(2, 2, 8),
             'minimum_order' => $this->faker->randomFloat(2, 10, 30),
-            'image_path' => null,
+            'rating' => $this->faker->randomFloat(1, 3.5, 5),
+            'price_range' => $this->faker->randomElement(['$', '$$', '$$$']),
+            'image' => $this->faker->imageUrl(640, 480, 'food', true),
+            'tags' => $this->faker->randomElements(['Vegan', 'Family', 'Gourmet', 'Local', 'Organic', 'Fast', 'Healthy', 'Traditional', 'Fusion'], 3),
+            'featured_dish' => $this->faker->words(2, true),
+            'latitude' => $this->faker->latitude(),
+            'longitude' => $this->faker->longitude(),
+            'image_url' => $this->faker->imageUrl(640, 480, 'food', true),
+            'special_offer' => $this->faker->optional()->randomElement(['10% off', 'Free delivery', '2 for 1', null]),
+            'is_open' => $this->faker->boolean(80),
+            'min_order' => $this->faker->randomFloat(2, 10, 30),
+            'distance_km' => $this->faker->randomFloat(2, 0.5, 10),
+            'review_count' => $this->faker->numberBetween(0, 500),
         ];
     }
 }

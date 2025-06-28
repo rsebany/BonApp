@@ -20,7 +20,7 @@ class SettingsController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         // Get system statistics

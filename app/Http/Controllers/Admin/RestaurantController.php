@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Restaurant;
 use App\Models\Address;
 use App\Models\Country;
+use App\Models\FoodOrder;
 use App\Http\Requests\StoreRestaurantRequest;
 use App\Http\Requests\UpdateRestaurantRequest;
 use App\Http\Resources\RestaurantResource;
@@ -20,7 +21,7 @@ class RestaurantController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         $query = Restaurant::with([
@@ -108,7 +109,7 @@ class RestaurantController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         $countries = Country::select('id', 'country_name')->orderBy('country_name')->get();
@@ -122,7 +123,7 @@ class RestaurantController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         $validated = $request->validate([
@@ -214,7 +215,7 @@ class RestaurantController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         $restaurant = Restaurant::with([
@@ -258,7 +259,7 @@ class RestaurantController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         $restaurant = Restaurant::with(['address', 'address.country'])->findOrFail($restaurant->id);
@@ -274,7 +275,7 @@ class RestaurantController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         try {
@@ -319,11 +320,9 @@ class RestaurantController extends Controller
 
     public function destroy($id)
     {
-        $user = auth()->user();
-
-        // Ensure user is an admin
-        if (!$user || $user->role !== 'admin') {
-            return redirect('/dashboard')->withErrors(['error' => 'You are not authorized to delete restaurants.']);
+        // Ensure user is admin
+        if (auth()->user()->role !== 'admin') {
+            return redirect()->route('user.home')->withErrors(['error' => 'You are not authorized to delete restaurants.']);
         }
 
         $restaurant = Restaurant::findOrFail($id);
@@ -530,7 +529,7 @@ class RestaurantController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         // Get total restaurants and active restaurants
@@ -630,8 +629,8 @@ class RestaurantController extends Controller
             fputcsv($file, ['Total Restaurants', $stats['total_restaurants']]);
             fputcsv($file, ['Active Restaurants', $stats['active_restaurants']]);
             fputcsv($file, ['Inactive Restaurants', $stats['inactive_restaurants']]);
-            fputcsv($file, ['Average Orders per Restaurant', number_format($stats['avg_orders_per_restaurant'], 2)]);
-            fputcsv($file, ['Average Revenue per Restaurant', '$' . number_format($stats['avg_revenue_per_restaurant'], 2)]);
+            fputcsv($file, ['Average Orders per Restaurant', number_format((float) $stats['avg_orders_per_restaurant'], 2)]);
+            fputcsv($file, ['Average Revenue per Restaurant', '$' . number_format((float) $stats['avg_revenue_per_restaurant'], 2)]);
             fputcsv($file, []);
 
             // Top Restaurants by Orders
@@ -646,7 +645,7 @@ class RestaurantController extends Controller
             fputcsv($file, ['Top 10 Restaurants by Revenue']);
             fputcsv($file, ['Restaurant', 'Total Revenue']);
             foreach ($stats['top_restaurants_by_revenue'] as $restaurant) {
-                fputcsv($file, [$restaurant->restaurant_name, '$' . number_format($restaurant->total_revenue, 2)]);
+                fputcsv($file, [$restaurant->restaurant_name, '$' . number_format((float) $restaurant->total_revenue, 2)]);
             }
 
             fclose($file);
@@ -711,5 +710,53 @@ class RestaurantController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Gather statistics data for export.
+     */
+    protected function getStatisticsData()
+    {
+        $total_restaurants = Restaurant::count();
+        $active_restaurants = Restaurant::where('is_active', true)->count();
+        $inactive_restaurants = Restaurant::where('is_active', false)->count();
+
+        // Get average orders per restaurant
+        $avg_orders_per_restaurant = Restaurant::withCount('orders')->get()->avg('orders_count');
+
+        // Get average revenue per restaurant
+        $avg_revenue_per_restaurant = Restaurant::withSum('orders', 'total_amount')->get()->avg('orders_sum_total_amount');
+
+        // Get top restaurants by orders
+        $top_restaurants_by_orders = Restaurant::select(
+                'restaurants.restaurant_name',
+                DB::raw('count(food_orders.id) as total_orders')
+            )
+            ->leftJoin('food_orders', 'restaurants.id', '=', 'food_orders.restaurant_id')
+            ->groupBy('restaurants.id', 'restaurants.restaurant_name')
+            ->orderBy('total_orders', 'desc')
+            ->limit(10)
+            ->get();
+
+        // Get top restaurants by revenue
+        $top_restaurants_by_revenue = Restaurant::select(
+                'restaurants.restaurant_name',
+                DB::raw('sum(food_orders.total_amount) as total_revenue')
+            )
+            ->leftJoin('food_orders', 'restaurants.id', '=', 'food_orders.restaurant_id')
+            ->groupBy('restaurants.id', 'restaurants.restaurant_name')
+            ->orderBy('total_revenue', 'desc')
+            ->limit(10)
+            ->get();
+
+        return [
+            'total_restaurants' => $total_restaurants,
+            'active_restaurants' => $active_restaurants,
+            'inactive_restaurants' => $inactive_restaurants,
+            'avg_orders_per_restaurant' => $avg_orders_per_restaurant ?? 0,
+            'avg_revenue_per_restaurant' => $avg_revenue_per_restaurant ?? 0,
+            'top_restaurants_by_orders' => $top_restaurants_by_orders,
+            'top_restaurants_by_revenue' => $top_restaurants_by_revenue,
+        ];
     }
 }

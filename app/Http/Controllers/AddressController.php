@@ -12,6 +12,7 @@ use Inertia\Inertia;
 class AddressController extends Controller
 {
     use AuthorizesRequests;
+    
     public function __construct(
         protected AddressService $addressService
     ) {}
@@ -20,7 +21,7 @@ class AddressController extends Controller
     {
         $addresses = $this->addressService->getUserAddresses(auth()->user());
         
-        return Inertia::render('Addresses/Index', [
+        return Inertia::render('User/Addresses/index', [
             'addresses' => $addresses,
             'canCreate' => true
         ]);
@@ -28,7 +29,7 @@ class AddressController extends Controller
 
     public function create()
     {
-        return Inertia::render('Addresses/Create', [
+        return Inertia::render('User/Addresses/create', [
             'countries' => \App\Models\Country::all()
         ]);
     }
@@ -40,16 +41,16 @@ class AddressController extends Controller
             $request->validated()
         );
         
-        return redirect()->route('addresses.show', $address)
-            ->with('success', 'Adresse créée avec succès');
+        return redirect()->route('addresses.index')
+            ->with('success', 'Address created successfully');
     }
 
     public function show(CustomerAddress $address)
     {
         $this->authorize('view', $address);
         
-        return Inertia::render('Addresses/Show', [
-            'address' => $address->load('address'),
+        return Inertia::render('User/Addresses/show', [
+            'address' => $address->load('address.country'),
             'canUpdate' => auth()->user()->can('update', $address),
             'canDelete' => auth()->user()->can('delete', $address)
         ]);
@@ -59,8 +60,8 @@ class AddressController extends Controller
     {
         $this->authorize('update', $address);
         
-        return Inertia::render('Addresses/Edit', [
-            'address' => $address->load('address'),
+        return Inertia::render('User/Addresses/edit', [
+            'address' => $address->load('address.country'),
             'countries' => \App\Models\Country::all()
         ]);
     }
@@ -73,8 +74,8 @@ class AddressController extends Controller
             $request->validated()
         );
         
-        return redirect()->route('addresses.show', $address)
-            ->with('success', 'Adresse mise à jour avec succès');
+        return redirect()->route('addresses.index')
+            ->with('success', 'Address updated successfully');
     }
 
     public function destroy(CustomerAddress $address)
@@ -84,6 +85,34 @@ class AddressController extends Controller
         $this->addressService->deleteAddress(auth()->user(), $address);
         
         return redirect()->route('addresses.index')
-            ->with('success', 'Adresse supprimée avec succès');
+            ->with('success', 'Address deleted successfully');
+    }
+
+    // API method to get user addresses for the location selector
+    public function getUserAddresses()
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+        
+        $addresses = $this->addressService->getUserAddresses($user);
+        
+        return response()->json([
+            'addresses' => $addresses->filter(function ($customerAddress) {
+                return $customerAddress->address !== null;
+            })->map(function ($customerAddress) {
+                return [
+                    'id' => $customerAddress->address->id,
+                    'address_line1' => $customerAddress->address->address_line1,
+                    'city' => $customerAddress->address->city,
+                    'region' => $customerAddress->address->region,
+                    'postal_code' => $customerAddress->address->postal_code,
+                    'country' => $customerAddress->address->country ? [
+                        'country_name' => $customerAddress->address->country->country_name,
+                    ] : null,
+                ];
+            })->values(),
+        ]);
     }
 }

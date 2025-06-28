@@ -1,5 +1,5 @@
-import { NavFooter } from '@/components/Navigation/UserNavigation/nav-footer';
-import { NavMain } from '@/components/Navigation/UserNavigation/nav-main';
+import { NavFooter } from '@/components/Navigation/AdminNavigation/nav-footer';
+import { NavMain } from '@/components/Navigation/AdminNavigation/nav-main';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';

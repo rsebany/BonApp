@@ -13,7 +13,7 @@ class AddressPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true; // Users can view their own addresses
     }
 
     /**
@@ -21,7 +21,7 @@ class AddressPolicy
      */
     public function view(User $user, CustomerAddress $customerAddress): bool
     {
-        return false;
+        return $user->id === $customerAddress->customer_id;
     }
 
     /**
@@ -29,7 +29,7 @@ class AddressPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return true; // Users can create addresses
     }
 
     /**
@@ -37,7 +37,7 @@ class AddressPolicy
      */
     public function update(User $user, CustomerAddress $customerAddress): bool
     {
-        return false;
+        return $user->id === $customerAddress->customer_id;
     }
 
     /**
@@ -45,7 +45,7 @@ class AddressPolicy
      */
     public function delete(User $user, CustomerAddress $customerAddress): bool
     {
-        return false;
+        return $user->id === $customerAddress->customer_id;
     }
 
     /**
@@ -53,7 +53,7 @@ class AddressPolicy
      */
     public function restore(User $user, CustomerAddress $customerAddress): bool
     {
-        return false;
+        return $user->id === $customerAddress->customer_id;
     }
 
     /**
@@ -61,6 +61,6 @@ class AddressPolicy
      */
     public function forceDelete(User $user, CustomerAddress $customerAddress): bool
     {
-        return false;
+        return $user->id === $customerAddress->customer_id;
     }
 }

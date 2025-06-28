@@ -31,9 +31,10 @@ class OrderService
                 'customer_address_id' => $orderData['customer_address_id'],
                 'order_status_id' => $this->getPendingStatusId(),
                 'order_datetime' => now(),
-                'delivery_fee' => $orderData['delivery_fee'],
+                'delivery_fee' => $orderData['delivery_fee'] ?? 0,
                 'total_amount' => $orderData['total_amount'],
-                'requested_delivery_datetime' => $orderData['requested_delivery_datetime'],
+                'delivery_time' => $orderData['delivery_time'],
+                'notes' => $orderData['notes'] ?? null,
             ]);
 
             // Create order items

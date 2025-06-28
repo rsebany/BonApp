@@ -106,8 +106,8 @@ class OrderController extends Controller
                         'first_name' => $order->assignedDriver->first_name,
                         'last_name' => $order->assignedDriver->last_name,
                     ] : null,
-                    'total_amount' => number_format($order->total_amount, 2),
-                    'delivery_fee' => number_format($order->delivery_fee, 2),
+                    'total_amount' => number_format((float) $order->total_amount, 2),
+                    'delivery_fee' => number_format((float) $order->delivery_fee, 2),
                     'created_at' => $order->created_at->toDateTimeString(),
                     'status' => $order->orderStatus->name,  // Changed from status to name
                 ];
@@ -127,7 +127,7 @@ class OrderController extends Controller
     public function show($id, Request $request)
     {
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         $order = FoodOrder::with([
@@ -166,7 +166,7 @@ class OrderController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         $customers = User::with(['addresses'])
@@ -295,6 +295,11 @@ class OrderController extends Controller
 
     public function edit($id)
     {
+        // Ensure user is admin
+        if (auth()->user()->role !== 'admin') {
+            return redirect()->route('user.home');
+        }
+
         try {
             $order = FoodOrder::with([
                 'customer:id,first_name,last_name,email',
@@ -400,7 +405,7 @@ public function scopeAvailableDrivers($query, $exceptDriverId = null)
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return redirect()->route('user.home');
         }
 
         $order = FoodOrder::findOrFail($id);
@@ -511,7 +516,7 @@ public function scopeAvailableDrivers($query, $exceptDriverId = null)
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return redirect()->route('user.home');
         }
 
         DB::beginTransaction();
@@ -544,7 +549,7 @@ public function scopeAvailableDrivers($query, $exceptDriverId = null)
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         $request->validate([
@@ -584,7 +589,7 @@ public function scopeAvailableDrivers($query, $exceptDriverId = null)
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         $request->validate([
@@ -629,7 +634,7 @@ public function scopeAvailableDrivers($query, $exceptDriverId = null)
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return redirect()->route('user.home');
         }
 
         $dateFrom = $request->get('date_from', now()->startOfMonth());
@@ -758,7 +763,7 @@ public function scopeAvailableDrivers($query, $exceptDriverId = null)
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         // Get total orders and revenue

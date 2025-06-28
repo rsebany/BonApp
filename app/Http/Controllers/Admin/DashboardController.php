@@ -21,7 +21,7 @@ class DashboardController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         // Get time range from request, default to 7d

@@ -30,6 +30,16 @@ class RestaurantResource extends JsonResource
             'status' => $this->getStatusLabel(),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            // New fields
+            'rating' => $this->rating,
+            'price_range' => $this->price_range,
+            'image' => $this->image,
+            'tags' => $this->tags,
+            'featured_dish' => $this->featured_dish,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
+            'distance_km' => isset($this->distance_km) ? round($this->distance_km, 2) : null,
+            'distance_miles' => isset($this->distance_miles) ? round($this->distance_miles, 2) : null,
             
             // Conditional relationships
             'address' => $this->whenLoaded('address', function () {
@@ -60,6 +70,21 @@ class RestaurantResource extends JsonResource
             'active_menu_items_count' => $this->when($this->shouldIncludeAdminFields($request), 
                 $this->menuItems()->where('is_available', true)->count()),
             'orders_count' => $this->whenCounted('orders'),
+            'review_count' => $this->review_count,
+            
+            // Reviews relationship
+            'reviews' => $this->whenLoaded('reviews', function () {
+                return $this->reviews->map(function ($review) {
+                    return [
+                        'id' => $review->id,
+                        'user_name' => $review->user_name,
+                        'rating' => $review->rating,
+                        'comment' => $review->comment,
+                        'is_verified' => $review->is_verified,
+                        'created_at' => $review->created_at,
+                    ];
+                });
+            }),
             
             // Additional user-specific data
             'is_owner' => $this->isOwnedBy($request->user()),

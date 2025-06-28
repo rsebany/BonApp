@@ -79,6 +79,15 @@ export interface BackendRestaurant {
     cuisine_type: string;
     delivery_time: string;
     address: Address;
+    rating?: number;
+    price_range?: string;
+    image?: string;
+    tags?: string[];
+    featured_dish?: string;
+    latitude?: number;
+    longitude?: number;
+    distance_km?: number;
+    distance_miles?: number;
 }
 
 export interface Restaurant extends BackendRestaurant {

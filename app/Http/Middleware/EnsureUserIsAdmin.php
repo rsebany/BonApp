@@ -16,7 +16,16 @@ class EnsureUserIsAdmin
     public function handle(Request $request, Closure $next, string $role): Response
     {
         if (!auth()->check() || auth()->user()->role !== $role) {
-            return redirect('/dashboard');
+            // Redirect based on user role
+            if (auth()->check()) {
+                $user = auth()->user();
+                if ($user->role === 'admin') {
+                    return redirect()->route('admin.dashboard');
+                } else {
+                    return redirect()->route('user.home');
+                }
+            }
+            return redirect('/');
         }
 
         return $next($request);

@@ -9,6 +9,8 @@ interface UserFormData {
   first_name: string;
   last_name: string;
   email: string;
+  phone?: string;
+  birth_date?: string;
   password: string;
   password_confirmation: string;
   role: string;
@@ -20,6 +22,8 @@ export default function CreateUserPage() {
     first_name: '',
     last_name: '',
     email: '',
+    phone: '',
+    birth_date: '',
     password: '',
     password_confirmation: '',
     role: 'customer',
@@ -83,6 +87,29 @@ export default function CreateUserPage() {
                   required
                 />
                 {errors.email && <div className="text-red-500 text-xs mt-1">{errors.email}</div>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="phone">Phone Number</label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={data.phone}
+                  onChange={(e) => setData('phone', e.target.value)}
+                  placeholder="+1234567890"
+                />
+                {errors.phone && <div className="text-red-500 text-xs mt-1">{errors.phone}</div>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="birth_date">Birth Date</label>
+                <Input
+                  id="birth_date"
+                  type="date"
+                  value={data.birth_date}
+                  onChange={(e) => setData('birth_date', e.target.value)}
+                />
+                {errors.birth_date && <div className="text-red-500 text-xs mt-1">{errors.birth_date}</div>}
               </div>
 
               <div>

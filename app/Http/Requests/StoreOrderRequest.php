@@ -18,8 +18,8 @@ class StoreOrderRequest extends FormRequest
         return [
             'restaurant_id' => 'required|exists:restaurants,id',
             'customer_address_id' => 'required|exists:addresses,id',
-            'requested_delivery_datetime' => 'required|date|after:now',
-            'delivery_fee' => 'required|numeric|min:0',
+            'delivery_time' => 'required|string',
+            'notes' => 'nullable|string|max:500',
             'items' => 'required|array|min:1',
             'items.*.menu_item_id' => 'required|exists:menu_items,id',
             'items.*.quantity' => 'required|integer|min:1|max:10',
@@ -57,6 +57,8 @@ class StoreOrderRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'delivery_time.required' => 'Please select a delivery time.',
+            'notes.max' => 'Order notes may not be greater than 500 characters.',
             'items.required' => 'At least one item must be selected.',
             'items.*.menu_item_id.required' => 'Menu item is required.',
             'items.*.menu_item_id.exists' => 'The selected menu item is invalid.',

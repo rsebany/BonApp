@@ -104,4 +104,20 @@ class User extends Authenticatable
     {
         return $this->hasMany(FoodOrder::class, 'assigned_driver_id');
     }
+
+    /**
+     * The restaurants this user has marked as favorite.
+     */
+    public function favoriteRestaurants()
+    {
+        return $this->belongsToMany(Restaurant::class, 'favorite_restaurant_user', 'user_id', 'restaurant_id')->withTimestamps();
+    }
+
+    /**
+     * The reviews this user has written.
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
 }

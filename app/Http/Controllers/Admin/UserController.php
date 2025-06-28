@@ -18,7 +18,7 @@ class UserController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         $query = User::query();
@@ -101,7 +101,7 @@ class UserController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         $user = User::findOrFail($id);
@@ -254,7 +254,7 @@ class UserController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         return Inertia::render('admin/Users/edit', [
@@ -266,7 +266,7 @@ class UserController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         $user = User::findOrFail($id);
@@ -469,6 +469,38 @@ class UserController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    /**
+     * Gather statistics data for export.
+     */
+    protected function getStatisticsData()
+    {
+        $total_users = User::count();
+        $total_customers = User::where('role', 'customer')->count();
+        $total_admins = User::where('role', 'admin')->count();
+        $total_drivers = User::where('role', 'driver')->count();
+        $verified_users = User::whereNotNull('email_verified_at')->count();
+
+        // Registrations by day for current month
+        $registrations_by_day = User::select(
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('count(*) as count')
+            )
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get();
+
+        return [
+            'total_users' => $total_users,
+            'total_customers' => $total_customers,
+            'total_admins' => $total_admins,
+            'total_drivers' => $total_drivers,
+            'verified_users' => $verified_users,
+            'registrations_by_day' => $registrations_by_day,
+        ];
+    }
+
     protected function exportList(Request $request)
     {
         if (auth()->user()->role !== 'admin') {
@@ -542,7 +574,7 @@ class UserController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         return Inertia::render('admin/Users/create');
@@ -552,7 +584,7 @@ class UserController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         $validatedData = $request->validate([
@@ -580,7 +612,7 @@ class UserController extends Controller
     {
         // Ensure user is admin
         if (auth()->user()->role !== 'admin') {
-            return redirect('/dashboard');
+            return redirect()->route('user.home');
         }
 
         // Get total users by role

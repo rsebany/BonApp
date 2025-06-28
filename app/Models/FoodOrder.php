@@ -17,12 +17,14 @@ class FoodOrder extends Model
         'customer_address_id',
         'order_status_id',
         'assigned_driver_id',
-        'order_date_time',
+        'order_datetime',
         'delivery_fee',
         'total_amount',
-        'requested_delivery_date_time',
+        'requested_delivery_datetime',
         'customer_driver_rating',
         'customer_restaurant_rating',
+        'delivery_time',
+        'notes',
     ];
 
     protected function casts(): array
@@ -69,12 +71,12 @@ class FoodOrder extends Model
 
     public function getFormattedTotalAttribute(): string
     {
-        return number_format($this->total_amount, 2);
+        return number_format((float) $this->total_amount, 2);
     }
 
     public function getFormattedDeliveryFeeAttribute(): string
     {
-        return number_format($this->delivery_fee, 2);
+        return number_format((float) $this->delivery_fee, 2);
     }
 
     public function getSubtotalAttribute(): float

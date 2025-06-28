@@ -11,26 +11,29 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 // Helper to transform backend data to frontend format
 const transformRestaurant = (restaurant: BackendRestaurant): Restaurant => {
-  // Add some mock data for fields not yet available from backend
-  const mockData = {
-    rating: (Math.random() * (5 - 4.5) + 4.5).toFixed(1),
-    priceRange: '$$',
-    image: `/images/${restaurant.cuisine_type?.toLowerCase() || 'default'}.jpg`,
-    tags: [restaurant.cuisine_type, 'Local Favorite', 'Comfort Food'],
-    featuredDish: 'Chef\'s Special',
-    distance: `${(Math.random() * 2).toFixed(1)} miles`
-  };
-
   return {
     ...restaurant,
-    rating: parseFloat(mockData.rating),
-    priceRange: mockData.priceRange,
-    image: mockData.image,
-    tags: mockData.tags,
-    featuredDish: mockData.featuredDish,
-    distance: mockData.distance,
+    rating: restaurant.rating ?? 0,
+    priceRange: restaurant.price_range ?? '$$',
+    image: restaurant.image ?? `/images/${restaurant.cuisine_type?.toLowerCase() || 'default'}.jpg`,
+    tags: restaurant.tags ?? [restaurant.cuisine_type],
+    featuredDish: restaurant.featured_dish ?? '',
+    distance: '', // still mocked or calculated elsewhere if needed
   };
 };
+
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const toRad = (x: number) => (x * Math.PI) / 180;
+  const R = 6371; // km
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 export default function Home() {
   const { featuredRestaurants: featuredRestaurantsData, popularCategories, localFavorites: localFavoritesData } = usePage<SharedData>().props;
@@ -43,6 +46,10 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [savedRestaurants, setSavedRestaurants] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [sortBy, setSortBy] = useState<'distance' | 'name' | 'rating' | 'price'>('distance');
+
+  const priceOrder = { '$': 1, '$$': 2, '$$$': 3 };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -52,11 +59,28 @@ export default function Home() {
     
     const timer = setTimeout(() => setLoading(false), 1500);
     
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => setUserLocation(null)
+      );
+    }
+    
     return () => {
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(timer);
     };
   }, []);
+
+  // Send user location to backend when available
+  useEffect(() => {
+    if (userLocation) {
+      router.reload({
+        only: ['featuredRestaurants', 'popularCategories', 'localFavorites'],
+        data: { lat: userLocation.lat, lng: userLocation.lng },
+      });
+    }
+  }, [userLocation]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +99,50 @@ export default function Home() {
   const filteredRestaurants = activeCategory === 'All' 
     ? allRestaurants 
     : allRestaurants.filter(restaurant => restaurant.cuisine_type === activeCategory);
+
+  // Calculate distance for each restaurant if userLocation is available
+  const restaurantsWithDistance = filteredRestaurants.map((restaurant) => {
+    let distance = '';
+    if (
+      typeof restaurant.distance_km === 'number' &&
+      typeof restaurant.distance_miles === 'number'
+    ) {
+      distance = `${restaurant.distance_km.toFixed(2)} km / ${restaurant.distance_miles.toFixed(2)} mi`;
+    } else if (
+      userLocation &&
+      typeof restaurant.latitude === 'number' &&
+      typeof restaurant.longitude === 'number'
+    ) {
+      const d = haversineDistance(
+        userLocation.lat,
+        userLocation.lng,
+        restaurant.latitude,
+        restaurant.longitude
+      );
+      distance = `${d.toFixed(2)} km`;
+    }
+    return { ...restaurant, distance };
+  });
+
+  // Sort logic
+  const sortedRestaurants = [...restaurantsWithDistance].sort((a, b) => {
+    if (sortBy === 'distance') {
+      if (a.distance_km != null && b.distance_km != null) {
+        return a.distance_km - b.distance_km;
+      }
+      return 0;
+    }
+    if (sortBy === 'rating') {
+      return (b.rating ?? 0) - (a.rating ?? 0);
+    }
+    if (sortBy === 'price') {
+      const aPrice = (['$', '$$', '$$$'].includes(a.priceRange) ? priceOrder[a.priceRange as '$' | '$$' | '$$$'] : 99);
+      const bPrice = (['$', '$$', '$$$'].includes(b.priceRange) ? priceOrder[b.priceRange as '$' | '$$' | '$$$'] : 99);
+      return aPrice - bPrice;
+    }
+    // Default: sort by name
+    return a.restaurant_name.localeCompare(b.restaurant_name);
+  });
 
   const categories = ['All', ...Array.from(new Set(allRestaurants.map(r => r.cuisine_type)))];
 
@@ -185,6 +253,21 @@ export default function Home() {
           </div>
         </div>
         
+        {/* Sort Dropdown */}
+        <div className="flex justify-end mb-4">
+          <label className="mr-2 font-medium">Sort by:</label>
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value as 'distance' | 'name' | 'rating' | 'price')}
+            className="border rounded px-2 py-1"
+          >
+            <option value="distance">Distance</option>
+            <option value="name">Name</option>
+            <option value="rating">Rating</option>
+            <option value="price">Price</option>
+          </select>
+        </div>
+        
         {/* Restaurants Grid */}
         <section className="mb-16">
           <div className="flex justify-between items-center mb-6">
@@ -206,7 +289,7 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredRestaurants.map((restaurant) => (
+              {sortedRestaurants.map((restaurant) => (
                 <div key={restaurant.id} className="group">
                   <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col border border-[#EBEBEB]">
                     <div className="relative">
@@ -442,17 +525,17 @@ export default function Home() {
       </div>
       
       {/* CTA Section */}
-      <div className="bg-[#222222] py-16 px-4 sm:px-6 lg:px-8 text-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to explore local flavors?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto text-[#EBEBEB]">
+      <div className="bg-gradient-to-r from-white via-[#F0FAF8] to-[#E6F7F3] py-16 px-4 sm:px-6 lg:px-8 rounded-2xl shadow-lg max-w-4xl mx-auto my-16">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold mb-4 text-[#222222]">Ready to explore local flavors?</h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto text-[#555]">
             Join thousands enjoying the best food their neighborhoods have to offer.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button className="bg-white text-[#222222] hover:bg-[#EBEBEB] h-12 px-6 rounded-lg font-medium">
+            <Button className="bg-[#00A699] text-white hover:bg-[#008489] h-12 px-6 rounded-lg font-medium shadow-md">
               Sign up to order
             </Button>
-            <Button variant="outline" className="border-[#717171] text-white hover:bg-[#222222] h-12 px-6 rounded-lg font-medium">
+            <Button variant="outline" className="border-[#00A699] text-[#00A699] hover:bg-[#E6F7F3] h-12 px-6 rounded-lg font-medium">
               Learn how it works
             </Button>
           </div>

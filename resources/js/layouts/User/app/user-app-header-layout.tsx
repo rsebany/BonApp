@@ -1,14 +1,13 @@
 import { AppContent } from '@/components/Navigation/SideBar/app-content';
-import { AppHeader } from '@/components/Navigation/SideBar/app-header';
 import { AppShell } from '@/components/Navigation/SideBar/app-shell';
-import { type BreadcrumbItem } from '@/types';
 import type { PropsWithChildren } from 'react';
 
-export default function AppHeaderLayout({ children, breadcrumbs }: PropsWithChildren<{ breadcrumbs?: BreadcrumbItem[] }>) {
+export default function AppHeaderLayout({ children }: PropsWithChildren<object>) {
     return (
         <AppShell>
-            <AppHeader breadcrumbs={breadcrumbs} />
-            <AppContent>{children}</AppContent>
+                <div style={{ width: '50%', minWidth: 0, height: '100%' }}>
+                    <AppContent>{children}</AppContent>
+                </div>
         </AppShell>
     );
 }

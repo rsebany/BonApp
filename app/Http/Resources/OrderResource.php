@@ -23,8 +23,8 @@ class OrderResource extends JsonResource
             'assigned_driver_id' => $this->assigned_driver_id,
             'order_datetime' => $this->order_datetime?->format('Y-m-d H:i:s'),
             'requested_delivery_datetime' => $this->requested_delivery_datetime?->format('Y-m-d H:i:s'),
-            'delivery_fee' => number_format($this->delivery_fee, 2),
-            'total_amount' => number_format($this->total_amount, 2),
+            'delivery_fee' => number_format((float) $this->delivery_fee, 2),
+            'total_amount' => number_format((float) $this->total_amount, 2),
             'customer_driver_rating' => $this->customer_driver_rating,
             'customer_restaurant_rating' => $this->customer_restaurant_rating,
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
@@ -112,7 +112,7 @@ class OrderResource extends JsonResource
                             return [
                                 'id' => $item->menuItem->id,
                                 'name' => $item->menuItem->item_name,
-                                'price' => number_format($item->menuItem->price, 2),
+                                'price' => number_format((float) $item->menuItem->price, 2),
                             ];
                         }),
                     ];
@@ -128,9 +128,9 @@ class OrderResource extends JsonResource
             'delivery_fee_raw' => (float) $this->delivery_fee,
             'total_amount_raw' => (float) $this->total_amount,
             
-            'formatted_total' => '$' . number_format($this->total_amount, 2),
-            'formatted_delivery_fee' => '$' . number_format($this->delivery_fee, 2),
-            'formatted_subtotal' => '$' . number_format($this->total_amount - $this->delivery_fee, 2),
+            'formatted_total' => '$' . number_format((float) $this->total_amount, 2),
+            'formatted_delivery_fee' => '$' . number_format((float) $this->delivery_fee, 2),
+            'formatted_subtotal' => '$' . number_format((float) $this->total_amount - (float) $this->delivery_fee, 2),
             
             'order_date' => $this->created_at?->format('M d, Y'),
             'order_time' => $this->created_at?->format('h:i A'),
