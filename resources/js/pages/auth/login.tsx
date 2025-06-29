@@ -28,8 +28,10 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
   const [showPassword, setShowPassword] = useState(false);
 
-  const submit: FormEventHandler = (e) => {
+  const submit: FormEventHandler = async (e) => {
     e.preventDefault();
+    // Ensure CSRF cookie is set before login
+    await fetch('http://localhost:8000/sanctum/csrf-cookie', { credentials: 'include' });
     post(route('login'), {
       onFinish: () => reset('password'),
     });

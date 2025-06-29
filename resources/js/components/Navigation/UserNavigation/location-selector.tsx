@@ -32,7 +32,7 @@ export const LocationSelector = () => {
             'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
           },
-          credentials: 'same-origin',
+          credentials: 'include',
         });
         
         if (response.ok) {
